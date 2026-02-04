@@ -5,10 +5,17 @@
   <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT">
   <img src="https://img.shields.io/badge/Claude-Skill-orange.svg" alt="Claude Skill">
   <img src="https://img.shields.io/badge/Version-1.1-brightgreen.svg" alt="Version: 1.1">
+  <img src="https://img.shields.io/badge/中文-🇨🇳-red.svg" alt="中文">
+  <a href="README_EN.md"><img src="https://img.shields.io/badge/English-🇺🇸-inactive.svg" alt="English"></a>
+  <a href="README_KR.md"><img src="https://img.shields.io/badge/한국어-🇰🇷-inactive.svg" alt="한국어"></a>
 </p>
 
 <p align="center">
   <b>专门针对中国 MBA 毕业论文的 AI 写作痕迹检测与去除工具</b>
+</p>
+
+<p align="center">
+  <code>#AI-Detection</code> <code>#Academic-Writing</code> <code>#MBA-Thesis</code> <code>#Claude-Skill</code> <code>#Text-Humanization</code> <code>#ChatGPT-Alternative</code> <code>#LLM-Writing</code> <code>#Research-Tools</code> <code>#Academic-Integrity</code> <code>#Chinese-NLP</code>
 </p>
 
 ---
