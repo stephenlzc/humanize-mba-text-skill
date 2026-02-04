@@ -28,8 +28,8 @@
 
 ```bash
 # 克隆仓库
-git clone https://github.com/stephenlzc/humanize-mba-text.git
-cd humanize-mba-text
+git clone https://github.com/stephenlzc/humanize-mba-text-skill.git
+cd humanize-mba-text-skill
 
 # 安装依赖（如需使用 transformers 模型）
 pip install transformers torch
@@ -71,7 +71,7 @@ python scripts/feedback_generator.py detection_result.json --text your_text.txt 
 
 ```bash
 cd ~/.config/opencode/skills
-git clone https://github.com/stephenlzc/humanize-mba-text.git
+git clone https://github.com/stephenlzc/humanize-mba-text-skill.git
 ```
 
 2. 在 Claude Code 中触发 Skill：
@@ -230,7 +230,7 @@ MBA论文写作需要关注AI痕迹问题。
 ## 📁 项目结构
 
 ```
-humanize-mba-text/
+humanize-mba-text-skill/
 ├── SKILL.md                          # Claude Skill 主文件
 ├── README.md                         # 本文件
 ├── LICENSE                           # MIT 许可证
@@ -312,7 +312,7 @@ done
 
 ## 📮 联系方式
 
-- GitHub Issues: [https://github.com/stephenlzc/humanize-mba-text/issues](https://github.com/stephenlzc/humanize-mba-text/issues)
+- GitHub Issues: [https://github.com/stephenlzc/humanize-mba-text-skill/issues](https://github.com/stephenlzc/humanize-mba-text-skill/issues)
 - 作者：stephenlzc
 
 ---
