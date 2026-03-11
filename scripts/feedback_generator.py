@@ -106,6 +106,62 @@ class FeedbackGenerator:
                 description="适当使用口语化表达",
                 priority="low",
             ),
+            # 新增规则1: 并列结构改写
+            "parallel_structure": ModificationRule(
+                issue_type="并列结构规整",
+                pattern=r"主要贡献包括.*：\s*\(1\).*\(2\).*\(3\)",
+                replacement="",  # 需要手动改写为递进关系
+                description="将并列结构(1)(2)(3)改写为递进关系",
+                priority="medium",
+            ),
+            # 新增规则2: 第一人称添加建议
+            "lack_first_person": ModificationRule(
+                issue_type="缺乏第一人称",
+                pattern=r"^(?!.*本文|.*我们).{50,}$",  # 长句中缺少第一人称
+                replacement="",
+                description="适当添加'本文'、'我们'等第一人称",
+                priority="low",
+            ),
+            # 新增规则3: 模糊表述替换
+            "vague_expressions": ModificationRule(
+                issue_type="模糊表述",
+                pattern=r"(很多|比较多|一些|大概|可能|比较)",
+                replacement="",  # 需要手动替换为具体数据或更准确的词
+                description="将模糊词替换为具体数字或准确表述",
+                priority="medium",
+            ),
+            # 新增规则4: 纯客观陈述优化
+            "purely_objective": ModificationRule(
+                issue_type="纯客观陈述",
+                pattern=r"实验结果显示[^。]*(为|达到|取得)[\d.]+",
+                replacement="",
+                description="添加主观判断，如'显著'、'优异'等",
+                priority="low",
+            ),
+            # 新增规则5: 逻辑闭环检测
+            "perfect_logic_loop": ModificationRule(
+                issue_type="完美逻辑闭环",
+                pattern=r"问题.*存在.*方法.*解决.*因此.*提出.*实验.*证明",
+                replacement="",
+                description="打破完美闭环，增加探索过程和背景铺垫",
+                priority="medium",
+            ),
+            # 新增规则6: 宏大叙事检测（绪论章节）
+            "grand_narrative": ModificationRule(
+                issue_type="宏大叙事",
+                pattern=r"(随着[^，。]*的?发展|时代|背景下|视角|从[^，。]*看)",
+                replacement="",
+                description="减少宏大叙事，聚焦具体研究问题",
+                priority="low",
+            ),
+            # 新增规则7: 模板化表述检测
+            "template_expressions": ModificationRule(
+                issue_type="模板化表述",
+                pattern=r"(具有重要的理论意义和现实意义|丰富了[^，。]*研究|为[^，。]*提供了参考)",
+                replacement="",
+                description="避免套话，用具体内容支撑价值判断",
+                priority="medium",
+            ),
         }
 
     def _load_chapter_templates(self) -> Dict[str, Dict]:
@@ -126,12 +182,34 @@ class FeedbackGenerator:
                 "common_issues": ["空泛建议", "忽视约束", "套用模板", "缺乏优先级"],
                 "improvement_strategy": "具体可操作，考虑约束，分阶段实施",
             },
+            "introduction": {
+                "name": "绪论/引言",
+                "common_issues": ["宏大叙事", "背景过长", "问题不明确", "套话过多"],
+                "improvement_strategy": "精简背景，直接切入研究问题，避免空话套话",
+            },
+            "methodology": {
+                "name": "研究方法",
+                "common_issues": ["模板化描述", "方法堆砌", "缺乏论证", "操作细节缺失"],
+                "improvement_strategy": "说明选择理由，描述操作细节，体现方法适配性",
+            },
+            "conclusion": {
+                "name": "结论与建议",
+                "common_issues": ["空泛建议", "与正文脱节", "缺乏可操作性", "过度拔高"],
+                "improvement_strategy": "建议具体可执行，与研究发现一一对应，避免过度引申",
+            },
         }
 
     def generate_feedback(self, detection_result: Dict, text: str) -> Dict:
         """生成综合反馈"""
         fusion_result = detection_result.get("fusion_result", {})
         modification_plan = detection_result.get("modification_plan", {})
+
+        # 初始化统计数据
+        stats = {
+            "auto_fixable_count": 0,
+            "manual_fix_count": 0,
+            "priority_distribution": {"high": 0, "medium": 0, "low": 0},
+        }
 
         feedback = {
             "summary": {
@@ -142,6 +220,7 @@ class FeedbackGenerator:
                     for r in fusion_result.get("method_results", [])
                 ),
                 "estimated_time": modification_plan.get("estimated_time", ""),
+                "statistics": stats,  # 添加统计信息
             },
             "modifications": [],
             "chapter_specific": {},
@@ -169,7 +248,7 @@ class FeedbackGenerator:
             text, priority_fixes
         )
 
-        # 分类修改难度
+        # 分类修改难度并统计
         feedback["quick_fixes"] = [
             m
             for m in feedback["modifications"]
@@ -180,6 +259,17 @@ class FeedbackGenerator:
             for m in feedback["modifications"]
             if m.get("priority") == "high" and not m.get("auto_fixable", False)
         ]
+
+        # 更新统计数据
+        for mod in feedback["modifications"]:
+            priority = mod.get("priority", "medium")
+            stats["priority_distribution"][priority] = (
+                stats["priority_distribution"].get(priority, 0) + 1
+            )
+            if mod.get("auto_fixable", False):
+                stats["auto_fixable_count"] += 1
+            else:
+                stats["manual_fix_count"] += 1
 
         return feedback
 
@@ -259,6 +349,44 @@ class FeedbackGenerator:
                 "2. 查找：中文 + 空格 + 英文/数字",
                 "3. 替换为：中文 + 英文/数字（无空格）",
             ],
+            # 新增规则的手动修改步骤
+            "parallel_structure": [
+                "1. 识别(1)(2)(3)或首先/其次/最后的并列结构",
+                "2. 将并列关系改为递进关系",
+                "3. 使用'在此基础上'、'进一步'等连接词",
+                "4. 添加必要的背景铺垫",
+            ],
+            "lack_first_person": [
+                "1. 在提出创新点时使用'本文提出'",
+                "2. 在表达判断时使用'我们认为'",
+                "3. 在强调贡献时使用'我们的工作'",
+            ],
+            "vague_expressions": [
+                "1. 将'很多'替换为具体数字（如'9个'）",
+                "2. 将'比较好'替换为具体指标（如'提升5%'）",
+                "3. 将'一些'替换为具体列举",
+            ],
+            "purely_objective": [
+                "1. 在数据陈述前添加主观判断词",
+                "2. 如'显著'、'优异'、'明显'等",
+                "3. 体现作者对结果的解读",
+            ],
+            "perfect_logic_loop": [
+                "1. 添加问题背景说明",
+                "2. 描述探索过程（如'初步尝试...但发现...'）",
+                "3. 增加对现有方法局限性的分析",
+                "4. 渐进式引出本文方法",
+            ],
+            "grand_narrative": [
+                "1. 删除'随着...的发展'等宏大背景",
+                "2. 直接切入具体研究场景",
+                "3. 聚焦微观层面的研究问题",
+            ],
+            "template_expressions": [
+                "1. 删除'具有重要的理论和现实意义'等套话",
+                "2. 用具体贡献替代价值判断",
+                "3. 说明研究的实际应用场景",
+            ],
         }
         return steps_map.get(issue_type, ["根据具体情况手动修改"])
 
@@ -268,6 +396,9 @@ class FeedbackGenerator:
             "literature_review": ["文献综述", "相关研究", "理论基础", "研究现状"],
             "case_analysis": ["案例分析", "案例研究", "实证分析", "企业分析"],
             "strategy": ["战略建议", "对策建议", "实施方案", "改进措施"],
+            "introduction": ["绪论", "引言", "研究背景", "问题提出"],
+            "methodology": ["研究方法", "研究设计", "技术路线", "实验设计"],
+            "conclusion": ["结论与建议", "研究结论", "政策建议", "管理启示"],
         }
 
         scores = {}
@@ -303,6 +434,32 @@ class FeedbackGenerator:
             if "约束" not in text and "限制" not in text:
                 detected_issues.append("忽视约束条件")
 
+        # 新增：绪论章节检测
+        elif chapter_type == "introduction":
+            if len(re.findall(r"随着[^，。]*的?发展", text)) > 1:
+                detected_issues.append("宏大叙事")
+            if text.count("。") > 5 and len(re.findall(r"本文|本研究", text)) == 0:
+                detected_issues.append("缺乏第一人称")
+            if re.search(r"具有重要的.*意义|丰富了.*研究", text):
+                detected_issues.append("套话过多")
+
+        # 新增：研究方法章节检测
+        elif chapter_type == "methodology":
+            if len(re.findall(r"本文采用|本研究使用", text)) > 3:
+                detected_issues.append("模板化描述")
+            if "选择" not in text and "原因" not in text:
+                detected_issues.append("缺乏方法选择论证")
+            if not re.search(r"具体|详细|步骤|流程", text):
+                detected_issues.append("操作细节缺失")
+
+        # 新增：结论建议章节检测
+        elif chapter_type == "conclusion":
+            empty_suggestions = len(re.findall(r"应该|需要|必须[^，。]{1,5}(加强|完善|优化|提升)", text))
+            if empty_suggestions > 3:
+                detected_issues.append("空泛建议")
+            if "本文发现" not in text and "研究表明" not in text:
+                detected_issues.append("与正文发现脱节")
+
         return {
             "chapter_name": template.get("name", "一般文本"),
             "detected_issues": detected_issues,
@@ -328,6 +485,20 @@ class FeedbackGenerator:
             "strategy": {
                 "建议空泛": "明确行动主体、具体措施、预期效果",
                 "忽视约束条件": "分析资源、能力、环境的限制",
+            },
+            "introduction": {
+                "宏大叙事": "直接描述具体场景，避免'随着时代发展'等空泛背景",
+                "缺乏第一人称": "在问题陈述和贡献说明时使用'本文'、'我们'",
+                "套话过多": "用具体贡献替换'具有重要理论意义'等套话",
+            },
+            "methodology": {
+                "模板化描述": "说明为什么选择该方法，而非简单罗列方法名称",
+                "缺乏方法选择论证": "对比可选方法，说明本文方法的适用性",
+                "操作细节缺失": "补充数据收集、处理的具体步骤",
+            },
+            "conclusion": {
+                "空泛建议": "每条建议都应明确who/what/how，如'企业应通过X方式实现Y效果'",
+                "与正文发现脱节": "建议应与研究发现一一对应",
             },
         }
 
@@ -366,6 +537,35 @@ class FeedbackGenerator:
             "spacing_issues": {
                 "before": "MBA 论文写作需要关注 AI 痕迹问题。2023 年的研究表明，15 % 的企业存在此类问题。",
                 "after": "MBA论文写作需要关注AI痕迹问题。2023年的研究表明，15%的企业存在此类问题。",
+            },
+            # 新增规则的改写示例
+            "parallel_structure": {
+                "before": "本文的主要贡献包括：(1)提出了XX方法；(2)设计了YY模块；(3)实现了ZZ性能提升。",
+                "after": "本文首先提出XX方法以解决...问题。在此基础上，我们进一步设计了YY模块，该模块通过...机制实现了功能增强。",
+            },
+            "lack_first_person": {
+                "before": "研究表明，企业文化对组织绩效有显著影响。基于此，提出了新的管理框架。",
+                "after": "本文研究表明，企业文化对组织绩效有显著影响。基于此，我们提出了新的管理框架。",
+            },
+            "vague_expressions": {
+                "before": "实验表明该方法效果很好，在很多数据集上都取得了比较好的结果。",
+                "after": "实验表明，该方法在9个公开数据集上取得了显著性能提升，平均MSE降低5.0%。",
+            },
+            "purely_objective": {
+                "before": "实验结果显示模型准确率达到95.2%，F1分数为0.89。",
+                "after": "实验结果显示模型取得了优异性能，准确率达到95.2%，F1分数为0.89。",
+            },
+            "perfect_logic_loop": {
+                "before": "问题A存在。方法B可以解决。因此提出方法B。实验证明有效。",
+                "after": "问题A在...场景下尤为突出。现有方法C虽然尝试缓解，但仍存在局限。经过分析，我们发现问题的根源在于...。基于这一洞察，本文提出方法B。",
+            },
+            "grand_narrative": {
+                "before": "随着数字经济的快速发展，企业面临着前所未有的机遇与挑战。",
+                "after": "在电商平台场景中，企业面临着流量获取成本上升的具体问题。",
+            },
+            "template_expressions": {
+                "before": "本研究具有重要的理论意义和现实意义，丰富了相关领域的研究。",
+                "after": "本研究构建了XX理论框架，为YY场景下的企业提供了可操作的决策参考。",
             },
         }
 

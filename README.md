@@ -5,9 +5,11 @@
   <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT">
   <img src="https://img.shields.io/badge/Claude-Skill-orange.svg" alt="Claude Skill">
   <img src="https://img.shields.io/badge/Version-1.1-brightgreen.svg" alt="Version: 1.1">
+  <img src="https://img.shields.io/badge/Kimi-CLI-blue.svg" alt="Kimi CLI">
   <img src="https://img.shields.io/badge/中文-🇨🇳-red.svg" alt="中文">
   <a href="README_EN.md"><img src="https://img.shields.io/badge/English-🇺🇸-inactive.svg" alt="English"></a>
   <a href="README_KR.md"><img src="https://img.shields.io/badge/한국어-🇰🇷-inactive.svg" alt="한국어"></a>
+  <a href="README_JP.md"><img src="https://img.shields.io/badge/日本語-🇯🇵-inactive.svg" alt="日本語"></a>
 </p>
 
 <p align="center">
@@ -39,6 +41,13 @@
 - ✅ **自动修复**：自动处理中英文混排空格等简单问题
 - ✅ **智能反馈**：生成详细的修改建议和前后对比示例
 - ✅ **Claude Skill 集成**：可作为 Claude Code 的 Skill 直接使用
+
+### 技术参考
+
+本项目在优化策略设计上参考了 [thesis-optimizer](https://github.com/Haimbeau1o/thesis-optimizer) 项目的三维协同优化理念：
+- 🔍 **降AI检测率**：句式多样化、语气自然化、逻辑人性化
+- 📉 **降查重率**：深度语义改写、引用规范化、专业术语处理  
+- ✨ **学术润色**：表达精准化、学术规范性、可读性优化
 
 ---
 
@@ -390,7 +399,10 @@ humanize-mba-text-skill/
 │   ├── chapter-3-analysis.md         # 第3章：现状与问题分析写作指南
 │   ├── chapter-4-solutions.md        # 第4章：对策建议写作指南
 │   ├── chapter-5-conclusion.md       # 第5章：结论写作指南
-│   └── format-standards.md           # 格式规范（中英文混排、图表、引用等）
+│   ├── format-standards.md           # 格式规范
+│   ├── strategy_ai_reduction.md      # 降AI检测率策略 ⭐新增
+│   ├── strategy_plagiarism.md        # 降查重率策略 ⭐新增
+│   └── strategy_polishing.md         # 学术润色策略 ⭐新增
 │
 └── scripts/                          # 检测脚本
     ├── detect_ai_patterns.py         # 基础规则检测
@@ -493,7 +505,9 @@ done
 ## 🙏 致谢
 
 - 感谢 Claude Code 提供的 Skill 框架
+- 感谢 Kimi CLI 提供的 Agent 并行执行工具
 - 感谢所有提供反馈和建议的用户
+- **特别感谢 [Haimbeau1o/thesis-optimizer](https://github.com/Haimbeau1o/thesis-optimizer) 项目**，本项目的三维协同优化策略（降AI检测率、降查重率、学术润色提升）参考了该项目的优秀设计
 
 ---
 
@@ -501,6 +515,12 @@ done
 
 - GitHub Issues: [https://github.com/stephenlzc/humanize-mba-text-skill/issues](https://github.com/stephenlzc/humanize-mba-text-skill/issues)
 - 作者：stephenlzc
+
+---
+
+## 🔗 相关项目
+
+- [thesis-optimizer](https://github.com/Haimbeau1o/thesis-optimizer) - 学术论文智能优化系统（计算机深度学习方向）
 
 ---
 

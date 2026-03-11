@@ -14,8 +14,9 @@ import re
 import sys
 import json
 import argparse
-from dataclasses import dataclass, asdict
-from typing import List, Dict, Tuple
+import math
+from dataclasses import dataclass, asdict, field
+from typing import List, Dict, Tuple, Optional
 from collections import Counter
 
 
@@ -29,6 +30,16 @@ class PatternMatch:
     content: str
     suggestion: str
     severity: str  # high, medium, low
+
+
+@dataclass
+class DetectionMetrics:
+    """检测指标数据类"""
+
+    parallel_structure_count: int = 0  # 并列结构数量
+    connector_density: float = 0.0  # 逻辑连接词密度（每百字）
+    sentence_length_std: float = 0.0  # 平均句长标准差
+    first_person_ratio: float = 0.0  # 第一人称使用比例
 
 
 class AIPatternDetector:
@@ -92,10 +103,11 @@ class AIPatternDetector:
                 "suggestion": "明确引用具体文献或删除此类表述",
                 "severity": "high",
             },
-            # 5. AI 词汇类
+            # 5. AI 词汇类（已增强）
             "ai_buzzwords": {
                 "name": "AI 词汇",
                 "patterns": [
+                    # 原有词汇
                     r"赋能",
                     r"抓手",
                     r"闭环",
@@ -109,7 +121,22 @@ class AIPatternDetector:
                     r"整合",
                     r"优化",
                     r"升级",
-                    r"转型[升级]",
+                    r"转型[升级]?",
+                    # 新增词汇（来自参考仓库策略）
+                    r"重构",
+                    r"解耦",
+                    r"调制",
+                    r"嵌入",
+                    r"聚合",
+                    r"瓶颈",
+                    r"挑战",
+                    r"机制",
+                    r"架构",
+                    r"框架",
+                    r"显著",
+                    r"优异",
+                    r"高效",
+                    r"精准",
                 ],
                 "suggestion": "使用传统学术词汇替代",
                 "severity": "high",
@@ -183,9 +210,40 @@ class AIPatternDetector:
                 "severity": "medium",
                 "multiline": True,
             },
+            # 12. 新增：句式特征检测
+            "sentence_patterns": {
+                "name": "规整句式特征",
+                "patterns": [
+                    # 过度规整的并列结构
+                    r"主要贡献包括[^：]*：\s*\(?1\)?[^，。]*\(?2\)?[^，。]*\(?3\)?",
+                    r"主要工作如下[^：]*：\s*\(?1\)?[^，。]*\(?2\)?[^，。]*\(?3\)?",
+                    # 过于完美的逻辑闭环
+                    r"问题[^，。]*存在[^，。]*方法[^，。]*解决[^，。]*因此[^，。]*提出[^，。]*实验[^，。]*证明",
+                    # 缺乏推导过程
+                    r"本文直接提出了",
+                    r"本研究直接采用",
+                    # 规整的段落结构
+                    r"为了[^，。]*，本文[^，。]*。具体而言[^，。]*",
+                ],
+                "suggestion": "打破规整结构，使用长短句交替，添加推理过程",
+                "severity": "high",
+            },
+            # 13. 新增：学术表达检测
+            "academic_formality": {
+                "name": "学术表达问题",
+                "patterns": [
+                    # 纯客观陈述模式（缺乏作者视角）
+                    r"实验结果显示[^。]*(?:MSE|MAE|准确率|精度|召回率|F1)[^为]*为[\d.]+",
+                    r"结果表明[^，。]*达到[\d.]+%",
+                    # 过度使用被动语态标记
+                    r"被[用于|应用于|证明|验证|用来]",
+                ],
+                "suggestion": "添加作者视角，使用'我们发现'等主观表述，解释数据意义",
+                "severity": "medium",
+            },
         }
 
-        # 章节特定规则
+        # 章节特定规则（已增强）
         self.chapter_patterns = {
             "literature_review": {
                 "name": "文献综述特征",
@@ -221,7 +279,52 @@ class AIPatternDetector:
                 "suggestion": "建议具体可操作，考虑约束条件，明确优先级",
                 "severity": "high",
             },
+            # 新增：摘要章节检测
+            "abstract": {
+                "name": "摘要AI特征",
+                "patterns": [
+                    r"本文针对[^，。]*问题[^，。]*提出了",
+                    r"本文研究了[^，。]*",
+                    r"结果表明[^，。]*",
+                    r"本文的主要贡献",
+                    r"实验结果表明[^，。]*",
+                ],
+                "suggestion": "摘要应简洁明了，避免模板化表述，突出核心创新",
+                "severity": "medium",
+            },
+            # 新增：方法论章节检测
+            "methodology": {
+                "name": "方法描述模板化",
+                "patterns": [
+                    r"该模块包含[^，。]*组件",
+                    r"本方法分为[^，。]*步骤",
+                    r"首先[^，。]*然后[^，。]*最后[^，。]*",
+                    r"第一阶段[^，。]*第二阶段[^，。]*第三阶段",
+                    r"输入[^，。]*经过[^，。]*输出",
+                ],
+                "suggestion": "方法描述应突出创新点，解释设计决策原因，避免纯流程化叙述",
+                "severity": "medium",
+            },
         }
+
+        # 逻辑连接词列表（用于计算密度）
+        self.connector_words = [
+            "首先", "其次", "最后", "第一", "第二", "第三", "此外", "另外",
+            "与此同时", "综上所述", "因此", "值得注意的是", "需要指出的是",
+            "由此可见", "然而", "但是", "因此", "所以", "由于", "因为",
+            "虽然", "尽管", "即使", "不过", "可是", "因而", "从而",
+            "进而", "继而", "于是", "然后", "接着", "随后", "最终",
+        ]
+
+        # 第一人称表述（用于检测作者视角）
+        self.first_person_patterns = [
+            r"本文",
+            r"我们",
+            r"本研究",
+            r"笔者",
+            r"我发现",
+            r"我们认为",
+        ]
 
     def detect_spacing_issues(self, text: str) -> List[PatternMatch]:
         """检测中英文/数字混排空格问题"""
@@ -313,6 +416,67 @@ class AIPatternDetector:
 
         return matches
 
+    def calculate_metrics(self, text: str) -> DetectionMetrics:
+        """
+        计算检测指标
+        
+        新增指标：
+        - 并列结构数量
+        - 逻辑连接词密度（每百字）
+        - 平均句长标准差
+        - 第一人称使用比例
+        """
+        metrics = DetectionMetrics()
+        
+        # 1. 计算并列结构数量
+        parallel_patterns = [
+            r"不仅[^，。]*而且",
+            r"既[^，。]*又",
+            r"一边[^，。]*一边",
+            r"一方面[^，。]*另一方面",
+            r"首先[^，。]*其次",
+            r"第一[^，。]*第二",
+            r"首先[^，。]*然后[^，。]*最后",
+        ]
+        parallel_count = 0
+        for pattern in parallel_patterns:
+            parallel_count += len(re.findall(pattern, text))
+        metrics.parallel_structure_count = parallel_count
+        
+        # 2. 计算逻辑连接词密度（每百字）
+        total_chars = len(text.replace(" ", "").replace("\n", ""))
+        connector_count = 0
+        for connector in self.connector_words:
+            connector_count += len(re.findall(connector, text))
+        if total_chars > 0:
+            metrics.connector_density = round((connector_count / total_chars) * 100, 2)
+        
+        # 3. 计算平均句长标准差
+        sentences = re.split(r'[。！？；]', text)
+        sentence_lengths = []
+        for sentence in sentences:
+            sentence = sentence.strip()
+            if sentence:
+                length = len(sentence)
+                sentence_lengths.append(length)
+        
+        if len(sentence_lengths) > 1:
+            mean_length = sum(sentence_lengths) / len(sentence_lengths)
+            variance = sum((x - mean_length) ** 2 for x in sentence_lengths) / len(sentence_lengths)
+            metrics.sentence_length_std = round(math.sqrt(variance), 2)
+        
+        # 4. 计算第一人称使用比例
+        first_person_count = 0
+        for pattern in self.first_person_patterns:
+            first_person_count += len(re.findall(pattern, text))
+        
+        # 估算总句数
+        total_sentences = len([s for s in sentences if s.strip()])
+        if total_sentences > 0:
+            metrics.first_person_ratio = round((first_person_count / total_sentences) * 100, 2)
+        
+        return metrics
+
     def analyze_chapter_type(self, text: str) -> str:
         """分析文本最可能属于哪个章节"""
         scores = {}
@@ -342,7 +506,12 @@ class AIPatternDetector:
             "literature_review": "文献综述",
             "case_analysis": "案例分析",
             "strategy": "战略建议",
+            "abstract": "摘要",
+            "methodology": "方法论",
         }
+        
+        # 计算新增指标
+        metrics = self.calculate_metrics(text)
 
         report = {
             "summary": {
@@ -352,6 +521,12 @@ class AIPatternDetector:
                 "low_severity": severity_counts.get("low", 0),
                 "detected_chapter": chapter_names.get(chapter_type, "一般文本"),
                 "ai_score": self._calculate_ai_score(matches, len(text)),
+            },
+            "metrics": {
+                "parallel_structure_count": metrics.parallel_structure_count,
+                "connector_density": metrics.connector_density,
+                "sentence_length_std": metrics.sentence_length_std,
+                "first_person_ratio": metrics.first_person_ratio,
             },
             "issue_types": dict(type_counts.most_common(10)),
             "matches": [asdict(m) for m in matches],
@@ -381,6 +556,8 @@ class AIPatternDetector:
             "literature_review": "本文本疑似文献综述章节。建议：1)按主题组织而非按作者罗列；2)进行比较分析而非简单陈述；3)明确指出研究空白。",
             "case_analysis": "本文本疑似案例分析章节。建议：1)精简背景信息，聚焦研究问题；2)提供具体数据和时间节点；3)分析因果机制。",
             "strategy": "本文本疑似战略建议章节。建议：1)确保建议具体可操作；2)考虑资源和能力约束；3)明确实施阶段和优先级。",
+            "abstract": "本文本疑似摘要章节。建议：1)避免'本文针对...问题...提出了'等模板化表述；2)直接陈述研究内容和核心发现；3)控制字数，突出创新点。",
+            "methodology": "本文本疑似方法论章节。建议：1)突出方法创新点而非流程描述；2)解释设计决策的原因；3)使用自然语言描述算法步骤。",
             "general": "请根据实际章节类型参考相应的改写规则。",
         }
         return advice.get(chapter_type, advice["general"])
@@ -389,6 +566,7 @@ class AIPatternDetector:
 def format_markdown_report(report: Dict) -> str:
     """格式化为 Markdown 报告"""
     summary = report["summary"]
+    metrics = report.get("metrics", {})
 
     md = f"""# AI 写作特征检测报告
 
@@ -400,6 +578,15 @@ def format_markdown_report(report: Dict) -> str:
   - 严重: {summary["high_severity"]}
   - 中等: {summary["medium_severity"]}
   - 轻微: {summary["low_severity"]}
+
+## 新增检测指标
+
+| 指标 | 数值 | 说明 |
+|-----|------|------|
+| 并列结构数量 | {metrics.get("parallel_structure_count", "N/A")} | 规整并列句式计数 |
+| 逻辑连接词密度 | {metrics.get("connector_density", "N/A")}% | 每百字连接词数量 |
+| 句长标准差 | {metrics.get("sentence_length_std", "N/A")} | 句式多样性指标(>8为佳) |
+| 第一人称比例 | {metrics.get("first_person_ratio", "N/A")}% | 作者视角使用频率 |
 
 ## 章节特定建议
 
@@ -435,7 +622,9 @@ def format_markdown_report(report: Dict) -> str:
 1. **优先处理严重问题**: 先修改标记为"严重"的 AI 特征
 2. **关注空格问题**: 中英文/数字混排空格最容易修复
 3. **按章节规则改写**: 参考章节特定规则进行针对性修改
-4. **通读润色**: 修改后通读全文，确保语言自然流畅
+4. **提升句式多样性**: 参考句长标准差指标，增加长短句交替
+5. **添加作者视角**: 适当增加"本文""我们"等第一人称表述
+6. **通读润色**: 修改后通读全文，确保语言自然流畅
 
 ---
 *报告生成时间: 自动检测*
@@ -506,12 +695,18 @@ def main():
     # 简要统计
     if args.verbose or not args.output:
         summary = report["summary"]
+        metrics = report.get("metrics", {})
         print(f"\n检测完成:")
         print(f"  - AI 特征分数: {summary['ai_score']}/100")
         print(f"  - 检测文本类型: {summary['detected_chapter']}")
         print(
             f"  - 发现问题: {summary['total_issues']} (严重: {summary['high_severity']}, 中等: {summary['medium_severity']}, 轻微: {summary['low_severity']})"
         )
+        print(f"\n新增指标:")
+        print(f"  - 并列结构数量: {metrics.get('parallel_structure_count', 'N/A')}")
+        print(f"  - 逻辑连接词密度: {metrics.get('connector_density', 'N/A')}%")
+        print(f"  - 句长标准差: {metrics.get('sentence_length_std', 'N/A')} (>8为佳)")
+        print(f"  - 第一人称比例: {metrics.get('first_person_ratio', 'N/A')}%")
 
 
 if __name__ == "__main__":
