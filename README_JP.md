@@ -577,12 +577,24 @@ IssueとPull Requestの提出を歓迎します！
 
 ### v1.3.0 (2026-07-05)
 
+#### 本体リリース — `feat: rule-driven AI-trace detection with prose + semantic-chain analyzers`
+
 - 🔬 **ルール外部化**：全AI検出ルールを外部TOMLへ移管し、7カテゴリに分割。`scripts/rule_loader.py`が漸進読み込みを提供
 - 📊 **散文構造分析器**：5つの統計/指紋分析器を追加（次元 6 / 8a / 8b / 9 / 10）
 - 🔗 **意味連鎖分析器**：10の段落/章節横断連鎖分析器を追加（次元 3 / 4 / 5）
 - 📋 **構造化書き換えプラン**：`detect_ai_patterns.generate_report` が `modify_plan` キーを返すように
 - 🎯 **統一ルールソース**：`AIPatternDetector` / `StatisticalDetector` / `FeedbackGenerator` が同じTOMLルール文書を共有
 - 🛠 **新規 `scripts/analyzers/` パッケージ**：散文+連鎖分析器の統合ディレクトリ
+
+#### v1.3.0 増分
+
+- 📐 **SKILL.md Harris式分割**：576 → 197 行（-66%）；識別・書き換え戦略 / 3D最適化+評価 / 改写チェックリスト / 章節別ルールを `references/strategy_optimization.toml` / `mba_rewrite_checklist.toml` / `chapter_rewrite_rules.toml` にデータ化；SKILL.md は案内役のみ
+- 🔁 **[humanizer-academic-zh](https://github.com/cangtianhuang/humanizer-academic-zh) との相互参照**：検出（当プロジェクト）↔ 書き換え（相手プロジェクト）が補完関係；パターン 21-25 を漸進ロード manifest 経由で `references/rules/categories/*.toml` に統合
+- 📊 **ルールデータ拡張**：
+  - `filler_phrases`（パターン 21 フィラー）：5 → 8 個 regex
+  - `chatbot_conversation_residue`（パターン 23 チャット口調）：4 → 7 個 regex
+  - 新規 `sycophantic_praise`（パターン 25 お世辞）：9 個 regex + 3 個 before/after 例、severity=medium / weight=0.5
+- 🌐 **多言語 README 同期**：v1.3.0 内容を中 / 英 / 日 / 韓 4 言語 README に同期；謝辞と関連プロジェクト節はどちらも `humanizer-academic-zh` に相互リンク
 
 ### v1.2.0 (2026-03-11)
 

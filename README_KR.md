@@ -563,12 +563,24 @@ Issue와 Pull Request를 환영합니다!
 
 ### v1.3.0 (2026-07-05)
 
+#### 메인 릴리스 — `feat: rule-driven AI-trace detection with prose + semantic-chain analyzers`
+
 - 🔬 **규칙 외부화**: 모든 AI 감지 규칙을 외부 TOML로 이전하여 7개 카테고리로 분할; `scripts/rule_loader.py` 가 점진 로딩을 제공
 - 📊 **산문 구조 분석기**: 5개 통계 / 지문 분석기 추가 (차원 6 / 8a / 8b / 9 / 10)
 - 🔗 **시맨틱 체인 분석기**: 10개 단락 / 장 절 횡단 체인 분석기 추가 (차원 3 / 4 / 5)
 - 📋 **구조화된 재작성 플랜**: `detect_ai_patterns.generate_report` 가 `modify_plan` 키를 반환
 - 🎯 **통합 규칙 소스**: `AIPatternDetector` / `StatisticalDetector` / `FeedbackGenerator` 가 동일한 TOML 규칙 문서를 공유
 - 🛠 **신규 `scripts/analyzers/` 패키지**: 산문+체인 분석기의 단일 디렉터리
+
+#### v1.3.0 증분
+
+- 📐 **SKILL.md Harris 스타일 분할**: 576 → 197 줄 (-66%); 식별·재작성 전략 / 3차원 최적화 + 평가 / MBA 체크리스트 / 장 절별 규칙 데이터를 `references/strategy_optimization.toml` / `mba_rewrite_checklist.toml` / `chapter_rewrite_rules.toml` 로 데이터화; SKILL.md 는 안내 인덱스만 유지
+- 🔁 **[humanizer-academic-zh](https://github.com/cangtianhuang/humanizer-academic-zh) 상호 참조**: 감지(우리) ↔ 재작성(그들) 경로가 보완 관계; 패턴 21-25 를 점진 로드 manifest 통해 `references/rules/categories/*.toml` 에 통합
+- 📊 **규칙 데이터 업그레이드**:
+  - `filler_phrases` (패턴 21 필러): 5 → 8 개 regex
+  - `chatbot_conversation_residue` (패턴 23 협업 톤): 4 → 7 개 regex
+  - 신규 `sycophantic_praise` (패턴 25 아첨): 9 개 regex + 3 개 before/after 예제, severity=medium / weight=0.5
+- 🌐 **다국어 README 동기화**: v1.3.0 내용을 중/영/일/한 4개국어 README 에 동기화; 감사의 글과 관련 프로젝트 절 모두 `humanizer-academic-zh` 와 상호 링크
 
 ### v1.2.0 (2024-02-10)
 

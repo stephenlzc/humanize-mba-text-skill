@@ -563,12 +563,24 @@ done
 
 ### v1.3.0 (2026-07-05)
 
+#### 主体发布 — `feat: rule-driven AI-trace detection with prose + semantic-chain analyzers`
+
 - 🔬 **规则外置**：所有 AI 检测规则改为外部 TOML，按 7 个分类目录拆分；`scripts/rule_loader.py` 提供渐进加载
 - 📊 **散文结构分析器**：新增 5 个统计 / 指纹分析器（维度 6 / 8a / 8b / 9 / 10）
 - 🔗 **语义链分析器**：新增 10 个跨段 / 跨章节链分析器（维度 3 / 4 / 5）
 - 📋 **结构化改写计划**：`detect_ai_patterns.generate_report` 返回 `modify_plan` 键
 - 🎯 **三方统一接入**：`AIPatternDetector` / `StatisticalDetector` / `FeedbackGenerator` 共用同一份 TOML 规则
 - 🛠 **新增 scripts/analyzers/**：作为分析器包统一目录
+
+#### v1.3.0 增量
+
+- 📐 **SKILL.md Harris 拆分**：576 行 → 197 行（-66%）；识别与改写策略 / 三维协同 + 评估 / 改写检查清单 / 章节特定规则等数据化到 `references/strategy_optimization.toml` / `mba_rewrite_checklist.toml` / `chapter_rewrite_rules.toml`；SKILL.md 仅保留导航入口
+- 🔁 **与 [humanizer-academic-zh](https://github.com/cangtianhuang/humanizer-academic-zh) 互引**：检测（我们）↔ 改写（他们）路径互补，模式 21-25 通过渐进式 manifest 接进 `references/rules/categories/*.toml`
+- 📊 **规则 data 升级**：
+  - `filler_phrases`（模式 21 填充短语）：5 → 8 条 regex
+  - `chatbot_conversation_residue`（模式 23 协作式沟通痕迹）：4 → 7 条 regex
+  - 新增 `sycophantic_praise`（模式 25 谄媚语气）：9 条 regex + 3 条 before/after 示例，severity=medium / weight=0.5
+- 🌐 **多语言 README 同步**：v1.3.0 内容同步到中文 / 英文 / 日文 / 韩文四份，致谢与「相关项目」节都加 cross-link 到 `humanizer-academic-zh`
 
 ### v1.2.0 (2024-03-11)
 

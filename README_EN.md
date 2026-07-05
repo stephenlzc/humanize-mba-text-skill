@@ -579,12 +579,24 @@ Issues and Pull Requests are welcome!
 
 ### v1.3.0 (2026-07-05)
 
+#### Main release — `feat: rule-driven AI-trace detection with prose + semantic-chain analyzers`
+
 - 🔬 **Externalized rules**: All AI-detection rules moved to external TOML, split across 7 categories; `scripts/rule_loader.py` provides progressive loading
 - 📊 **Prose-structure analyzers**: 5 new statistical / fingerprint analyzers (dimensions 6 / 8a / 8b / 9 / 10)
 - 🔗 **Semantic-chain analyzers**: 10 new cross-paragraph / cross-chapter chain analyzers (dimensions 3 / 4 / 5)
 - 📋 **Structured rewrite plan**: `detect_ai_patterns.generate_report` now returns a `modify_plan` key
 - 🎯 **Unified rule source**: `AIPatternDetector` / `StatisticalDetector` / `FeedbackGenerator` share the same TOML rule document
 - 🛠 **New `scripts/analyzers/` package**: single home for the prose + chain analyzer code
+
+#### v1.3.0 increments
+
+- 📐 **SKILL.md Harris-style split**: 576 → 197 lines (-66%); identification / three-dimensional optimization / MBA checklist / chapter-specific rewrite data moved into `references/strategy_optimization.toml` / `mba_rewrite_checklist.toml` / `chapter_rewrite_rules.toml`; SKILL.md becomes a thin navigation index
+- 🔁 **Cross-reference with [humanizer-academic-zh](https://github.com/cangtianhuang/humanizer-academic-zh)**: detect (us) ↔ rewrite (them) paths complement each other; patterns 21–25 wire into `references/rules/categories/*.toml` through the progressive manifest
+- 📊 **Rule data upgrade**:
+  - `filler_phrases` (Pattern 21): 5 → 8 regex patterns
+  - `chatbot_conversation_residue` (Pattern 23): 4 → 7 regex patterns
+  - New `sycophantic_praise` (Pattern 25): 9 regex patterns + 3 before/after examples, severity=medium / weight=0.5
+- 🌐 **Multi-language README sync**: v1.3.0 content brought into Chinese / English / Japanese / Korean READMEs; both 致谢 / Acknowledgments and 🔗 Related Projects cross-link to `humanizer-academic-zh`
 
 ### v1.2.0 (2024-03-11)
 
