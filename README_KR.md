@@ -4,7 +4,7 @@
   <img src="https://img.shields.io/badge/Python-3.7+-blue.svg" alt="Python 3.7+">
   <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT">
   <img src="https://img.shields.io/badge/Claude-Skill-orange.svg" alt="Claude Skill">
-  <img src="https://img.shields.io/badge/Version-1.2-brightgreen.svg" alt="Version: 1.2">
+  <img src="https://img.shields.io/badge/Version-1.3-brightgreen.svg" alt="Version: 1.3">
   <img src="https://img.shields.io/badge/Kimi-CLI-blue.svg" alt="Kimi CLI">
   <a href="README.md"><img src="https://img.shields.io/badge/中文-🇨🇳-inactive.svg" alt="中文"></a>
   <a href="README_EN.md"><img src="https://img.shields.io/badge/English-🇺🇸-inactive.svg" alt="English"></a>
@@ -26,18 +26,28 @@
 
 이 도구는 **중국 MBA 졸업 논문**을 위해 특별히 설계된 AI 글쓰기 흔적 감지 및 제거 도구입니다. MBA 논문의 학술 규범과 실무 요구사항을 기반으로 하여, 다차원 감지 방법을 통해 텍스트의 AI 생성 특징을 식별하고 구체적인 수정 제안을 제공하여 AI 생성 텍스트를 자연스럽고 인간적인 학술 글쓰기 스타일로 변환하는 데 도움을 줍니다.
 
-### ✨ 버전 1.1 새로운 기능
+### ✨ 버전 1.3 새로운 기능
 
-- 📚 **장 문서 재구성**: 장 규칙을 5개의 독립 파일로 분할하여 검색 및 사용이 용이
-- 🎓 **MBA 규범 세분화**: MBA 논문 핵심 원칙 및 분 장별 글쓰기 가이드 신규 추가
-- 📝 **형식 규범 개선**: 형식 표준 문서를 독립적으로 정리하여 중영문 혼용, 차트, 인용 등을 포괄
-- 🎯 **실무 지향 강화**: 데이터 지원, 이론 적용 및 구체적 사례 분석에 더욱 중점
+- 🔬 **규칙 외부화**: 모든 AI 감지 규칙을 외부 TOML 파일로 이전하여 7개 카테고리(`structure / rhythm_quality / formatting / content / evidence / language / chapter-categories`)로 분할. 규칙이 코드와 분리되어 확장 시 코드 변경 불필요
+- 📊 **산문 구조 분석기(5개)**: 문장 길이 CV / 단락 길이 CV / 단락 헤더 푸터 반복 / 단락 간 구조 균일화 / 장 절 반복. 각 분석기는 severity + confidence + location + evidence + suggestion 5개 필드 발급
+- 🔗 **시맨틱 체인 분석기(10개)**: 삼단식 / 저자 나열 / 방법 적재 / 초록 템플릿 / 결론 에코 / 막연한 문제 / 출처 없는 정량화 / 거시 서사 / 증거 체인 완성도 / 문제-대책 장 절 간 추적 — 단락이나 장을 가로지르는 패턴
+- 📋 **구조화된 재작성 플랜**: 리포트에 `modify_plan` 키 추가 — 각 문제에 위치, 재작성 골격, 추천 치환, 목표 글자수 범위 제공. severity high → medium → low 순으로 정렬되어 LLM 또는 인적 편집에 직접 사용 가능
+- 🎯 **통합 규칙 소스**: `AIPatternDetector` / `StatisticalDetector` / `FeedbackGenerator`가 동일한 TOML 규칙 문서를 공유
+
+### ✨ 버전 1.2 새로운 기능
+
+- 📚 **삼차원 최적화 전략 문서화**: AI 감지율 감소 / 표절율 감소 / 학술 윤문 향상을 위한 3개 전략 문서 신규 추가
+- 🔍 **향상된 감지 능력**: 규칙 매칭, 통계 분석, 언어 특징 3계층 전면 최적화
+- 🎓 **MBA 규범 세분화**: MBA 논문 핵심 원칙 및 분 장별 글쓰기 가이드 추가 정교화
+- 📝 **형식 규범 개선**: 형식 표준 문서의 경계 시나리오 커버리지 확장
+- 🌐 **다국어 README**: 영어 / 일본어 버전 추가
 
 ### 핵심 기능
 
-- ✅ **다차원 AI 감지**: 규칙 매칭, 통계 분석, 언어 특징 세 가지 감지 방법 결합
+- ✅ **다계층 AI 감지**: 정규식 규칙 → 산문 통계(5차원) → 시맨틱 체인(10차원) 3층 구조
 - ✅ **장 특정 규칙**: 서론, 이론, 분석, 제안, 결론 5개 장에 대한 최적화 전략
 - ✅ **MBA 논문 규범**: 중국 대학 MBA 논문의 글자 수, 구조, 형식 요구사항 준수
+- ✅ **구조화된 재작성 플랜**: 각 issue에 위치 + 골격 + 추천 치환 + 목표 글자수 부여
 - ✅ **자동 수정**: 중영문 혼용 공백 등 간단한 문제 자동 처리
 - ✅ **지능형 피드백**: 상세한 수정 제안 및 전후 비교 예시 생성
 - ✅ **Claude Skill 통합**: Claude Code의 Skill로 직접 사용 가능
@@ -178,6 +188,56 @@ AI 흔적 제거: [텍스트 붙여넣기]
 - **접속사 밀도**: 논리적 접속사 사용 빈도 통계
 - **형식적 표현 패턴**: 과도하게 형식적인 학술 표현 식별
 - **문장 구조 복잡성**: 복잡한 문장 구조 사용 분석
+
+### 4. 산문 구조 분석기 (v1.3)
+
+각 분석기는 `AnalyzerIssue`(analyzer_id / severity / confidence / location / evidence / suggestion)와 통계 지표를 반환합니다:
+
+| 차원 | analyzer_id | 트리거 |
+| --- | --- | --- |
+| 6 | `uniform_sentence_length` | 문장 길이 분산/CV가 임계값 초과 (단락 + 전체) |
+| 9 | `uniform_paragraph_length` | 단락 간 CJK 길이 CV < 0.25 |
+| 10 | `paragraph_edge_template_repeat` | 3+ 연속 단락이 동일 헤더/푸터 지문 공유 |
+| 8a | `paragraph_structure_uniformity` | 3+ 연속 단락이 동일 4-튜플 구조 지문 공유 |
+| 8b | `chapter_template_repeat` | 단일 장에서 3+ 절이 동일 장 절 템플릿 재사용 |
+
+### 5. 시맨틱 체인 분석기 (v1.3)
+
+단락이나 장을 가로지르는 AI 패턴:
+
+| 차원 | analyzer_id | 트리거 |
+| --- | --- | --- |
+| 3 | `chain_three_part_rule` | 3+ 연속 단락이 「一是…二是…三是」 또는 「먼저…다음…마지막으로」 사용 |
+| 3 | `chain_author_listing` | 단일 장에서 4+ 「저자(년) 指出/认为」 나열 |
+| 3 | `chain_method_name` | 단일 단락에서 2+ 방법/모델/이론명을 개별 설명 없이 적재 |
+| 3 | `chain_abstract_template` | 단일 단락이 3+ 초록 템플릿 구문에 적중 |
+| 3 | `chain_conclusion_echo` | 결론 장 서두와 서론 서두의 문자 Jaccard ≥ 0.30 |
+| 4 | `chain_vague_problem_statement` | 2+ 막연한 문제 표현이 30자 내에 수치 근거 없음 |
+| 4 | `chain_unsupported_quantification` | 2+ 백분율/순위 주장에 80자 내 「根据/来源/问卷/N=」 앵커 없음 |
+| 4 | `chain_macro_narrative` | 1000자 윈도우 내 3+ 거시 서술 표현 |
+| 5 | `evidence_chain_completeness` | content+evidence 횡단: 2+ 정량화/조사 주장이 방법 앵커 부재 |
+| 5 | `cross_section_problem_trace` | 제3장 문제 ↔ 제5장 대책 키워드 중복률 < 30% |
+
+### 6. 구조화된 재작성 플랜 (v1.3)
+
+`detect_ai_patterns.AIPatternDetector.generate_report()` 와 `multi_detector.FusionEngine.detect()` 는 `modify_plan` 키를 노출합니다:
+
+```json
+{
+  "analyzer_id": "chain_unsupported_quantification",
+  "severity": "high",
+  "location": "global",
+  "evidence": "백분율/순위 주장 7건, 그 중 5건이 80자 내 근거 없음",
+  "suggestion": "모든 정량 주장에 출처 부착",
+  "rewrite_template": "각 정량 주장에 표본, 시간 창, 통계 범위를 부착한다.",
+  "recommended_replacements": [
+    "「2023년 12월 고객 설문 (N=120)에 따르면…」",
+    "표본 설명: 「5점 리커트 척도」",
+    "검증 불가 시: 「본 지표는 추가 검증이 필요」",
+  ],
+  "target_word_count_range": [60, 140]
+}
+```
 
 ---
 
@@ -390,10 +450,13 @@ MBA논문 작성에서 AI흔적 문제에 주목해야 합니다.
 ```
 humanize-mba-text-skill/
 ├── SKILL.md                          # 주요 Claude Skill 파일
-├── README.md                         # 본 파일
+├── README.md                         # 중국어 README
+├── README_EN.md                      # English README
+├── README_JP.md                      # 日本語 README
+├── README_KR.md                      # 한국어 README (이 파일)
 ├── LICENSE                           # MIT 라이선스
 │
-├── references/                       # 참조 문서
+├── references/                       # 참조 문서 + AI 감지 규칙 데이터
 │   ├── ai-writing-patterns.md        # AI 글쓰기 특징 상세 가이드
 │   ├── chapter-1-introduction.md     # 제1장: 서론 글쓰기 가이드
 │   ├── chapter-2-theory.md           # 제2장: 이론적 기초 글쓰기 가이드
@@ -401,14 +464,39 @@ humanize-mba-text-skill/
 │   ├── chapter-4-solutions.md        # 제4장: 대안 제안 글쓰기 가이드
 │   ├── chapter-5-conclusion.md       # 제5장: 결론 글쓰기 가이드
 │   ├── format-standards.md           # 형식 규범
-│   ├── strategy_ai_reduction.md      # AI 감지율 감소 전략 ⭐신규
-│   ├── strategy_plagiarism.md        # 표절률 감소 전략 ⭐신규
-│   └── strategy_polishing.md         # 학술 윤문 전략 ⭐신규
+│   ├── strategy_ai_reduction.md      # AI 감지율 감소 전략
+│   ├── strategy_plagiarism.md        # 표절률 감소 전략
+│   ├── strategy_polishing.md         # 학술 윤문 전략
+│   ├── chinese-paper-humanization-rules.toml   # 단일 규칙 진입점 (대체용)
+│   └── rules/                        # ⭐v1.3: 점진 로드 가능한 AI 규칙
+│       ├── index.toml                #   경량 매니페스트
+│       ├── categories/
+│       │   ├── structure.toml        #   구조 카테고리
+│       │   ├── rhythm_quality.toml  #   리듬 카테고리
+│       │   ├── formatting.toml       #   형식 카테고리
+│       │   ├── content.toml          #   내용 (거시 서술/막연한 문제/출처 없는 정량화 포함)
+│       │   ├── evidence.toml         #   증거 (방법 미기재/인과 비약 포함)
+│       │   └── language.toml         #   언어 카테고리
+│       ├── chapter-categories.toml  #   장 절 타입 분류기
+│       └── metrics.toml              #   공통 측정 어휘
 │
 └── scripts/                          # 감지 스크립트
-    ├── detect_ai_patterns.py         # 기본 규칙 감지
-    ├── multi_detector.py             # 다방안 융합 감지기
-    └── feedback_generator.py         # 피드백 생성기
+    ├── rule_loader.py                # ⭐v1.3: TOML 점진 로더
+    ├── detect_ai_patterns.py         # AIPatternDetector 진입점 (modify_plan 포함)
+    ├── multi_detector.py             # FusionEngine 진입점
+    ├── feedback_generator.py         # 피드백 생성기
+    └── analyzers/                    # ⭐v1.3: 분석기 패키지
+        ├── __init__.py               #   run_prose_analyzers / run_semantic_chain_analyzers / build_modify_plan 노출
+        ├── _types.py                 #   AnalyzerIssue / AnalyzerReport 데이터 계약
+        ├── _segments.py              #   공통 세그멘테이션 헬퍼
+        ├── _regex_categories.py      #   hit 레벨 래퍼 (체인 레이어용)
+        ├── sentence_length.py        #   차원 6
+        ├── paragraph_length.py       #   차원 9
+        ├── paragraph_edges.py        #   차원 10
+        ├── paragraph_structure.py    #   차원 8a
+        ├── chapter_template.py       #   차원 8b
+        ├── semantic_chain.py         #   차원 3/4/5: 10개 체인 분석기
+        └── rewrite_planner.py        #   AnalyzerIssue → 구조화된 ModifyEntry
 ```
 
 ---
@@ -472,6 +560,15 @@ Issue와 Pull Request를 환영합니다!
 ---
 
 ## 📝 변경 로그
+
+### v1.3.0 (2026-07-05)
+
+- 🔬 **규칙 외부화**: 모든 AI 감지 규칙을 외부 TOML로 이전하여 7개 카테고리로 분할; `scripts/rule_loader.py` 가 점진 로딩을 제공
+- 📊 **산문 구조 분석기**: 5개 통계 / 지문 분석기 추가 (차원 6 / 8a / 8b / 9 / 10)
+- 🔗 **시맨틱 체인 분석기**: 10개 단락 / 장 절 횡단 체인 분석기 추가 (차원 3 / 4 / 5)
+- 📋 **구조화된 재작성 플랜**: `detect_ai_patterns.generate_report` 가 `modify_plan` 키를 반환
+- 🎯 **통합 규칙 소스**: `AIPatternDetector` / `StatisticalDetector` / `FeedbackGenerator` 가 동일한 TOML 규칙 문서를 공유
+- 🛠 **신규 `scripts/analyzers/` 패키지**: 산문+체인 분석기의 단일 디렉터리
 
 ### v1.2.0 (2024-02-10)
 

@@ -4,7 +4,7 @@
   <img src="https://img.shields.io/badge/Python-3.7+-blue.svg" alt="Python 3.7+">
   <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT">
   <img src="https://img.shields.io/badge/Claude-Skill-orange.svg" alt="Claude Skill">
-  <img src="https://img.shields.io/badge/Version-1.2-brightgreen.svg" alt="Version: 1.2">
+  <img src="https://img.shields.io/badge/Version-1.3-brightgreen.svg" alt="Version: 1.3">
   <img src="https://img.shields.io/badge/Kimi-CLI-blue.svg" alt="Kimi CLI">
   <a href="README.md"><img src="https://img.shields.io/badge/中文-🇨🇳-inactive.svg" alt="中文"></a>
   <img src="https://img.shields.io/badge/English-🇺🇸-red.svg" alt="English">
@@ -26,19 +26,28 @@
 
 This is an AI writing trace detection and removal tool specifically designed for **Chinese MBA theses**. Based on the academic norms and practical requirements of MBA theses, it uses multi-dimensional detection methods to identify AI-generated features in text and provides specific modification suggestions to help you rewrite AI-generated text into natural, humanized academic writing style.
 
+### ✨ Version 1.3 New Features
+
+- 🔬 **Externalized Rules**: All AI-detection rules moved to external TOML documents, split across 7 categories (`structure / rhythm_quality / formatting / content / evidence / language / chapter-categories`); rules decoupled from code, no code change to extend
+- 📊 **Prose-Structure Analyzers (5)**: sentence-length CV / paragraph-length CV / paragraph-edge template repeat / cross-paragraph structure uniformity / chapter template repeat; each emits severity + confidence + location + evidence + suggestion
+- 🔗 **Semantic-Chain Analyzers (10)**: three-part template / author listing / method-name stacking / abstract template / conclusion echo / vague problem statement / unsupported quantification / macro-narrative window / evidence-chain completeness / cross-section problem trace — patterns that emerge *across* paragraphs and chapters
+- 📋 **Structured Rewrite Plan**: Reports now expose a `modify_plan` key with per-issue location, rewrite skeleton, recommended replacements, and target word-count range — sorted high → medium → low severity, ready to feed an LLM or a human editor
+- 🎯 **Unified Rule Source**: `AIPatternDetector`, `StatisticalDetector`, and `FeedbackGenerator` all consume the same TOML rule document
+
 ### ✨ Version 1.2 New Features
 
 - 📚 **Three-Dimensional Optimization Strategy**: Added three new strategy documents for AI detection rate reduction, plagiarism rate reduction, and academic polishing
 - 🔍 **Enhanced Detection Capability**: Optimized rule matching, statistical analysis, and language feature detection
 - 🎓 **Refined MBA Standards**: Further refined MBA thesis core principles and chapter-specific writing guidelines
 - 📝 **Improved Format Standards**: Expanded format standard documentation covering more edge cases
-- 🎯 **Strengthened Practice Orientation**: Greater emphasis on data support, theoretical application, and specific case analysis
+- 🌐 **Multi-language READMEs**: Added English, Japanese, and Korean versions
 
 ### Core Features
 
-- ✅ **Multi-dimensional AI Detection**: Combines rule matching, statistical analysis, and linguistic feature detection
+- ✅ **Layered AI Detection**: Regex rules → prose-structure statistics (5 dimensions) → semantic-chain patterns (10 dimensions)
 - ✅ **Chapter-specific Rules**: Optimization strategies for 5 chapters: Introduction, Theory, Analysis, Solutions, and Conclusion
 - ✅ **MBA Thesis Standards**: Complies with Chinese university MBA thesis word count, structure, and format requirements
+- ✅ **Structured Rewrite Plan**: Every issue carries location + skeleton + recommended replacements + target word count
 - ✅ **Auto-fix**: Automatically handles simple issues like Chinese-English mixed spacing
 - ✅ **Smart Feedback**: Generates detailed modification suggestions and before/after comparison examples
 - ✅ **Claude Skill Integration**: Can be used directly as a Claude Code Skill
@@ -190,6 +199,56 @@ Identifies the following AI writing characteristics:
 - **Connective Density**: Statistics on logical connective usage frequency
 - **Formal Expression Patterns**: Identifies overly formal academic expressions
 - **Sentence Complexity**: Analyzes complex sentence structure usage
+
+### 4. Prose-Structure Analyzers (v1.3)
+
+Each analyzer returns an `AnalyzerIssue` (analyzer_id / severity / confidence / location / evidence / suggestion) plus statistical metrics:
+
+| Dim | analyzer_id | Trigger |
+| --- | --- | --- |
+| 6 | `uniform_sentence_length` | Sentence-length variance/CV exceeds threshold (paragraph + global) |
+| 9 | `uniform_paragraph_length` | Inter-paragraph CJK length CV < 0.25 |
+| 10 | `paragraph_edge_template_repeat` | 3+ consecutive paragraphs share identical leading/trailing fingerprint |
+| 8a | `paragraph_structure_uniformity` | 3+ consecutive paragraphs share the same 4-tuple structure fingerprint |
+| 8b | `chapter_template_repeat` | 3+ sections inside one chapter reuse the same chapter-template |
+
+### 5. Semantic-Chain Analyzers (v1.3)
+
+Cross-paragraph and cross-chapter AI patterns that no per-paragraph rule can catch:
+
+| Dim | analyzer_id | Trigger |
+| --- | --- | --- |
+| 3 | `chain_three_part_rule` | 3+ consecutive paragraphs all use 「一是…二是…三是」 or 「首先…其次…最后」 |
+| 3 | `chain_author_listing` | 4+ 「Author(year) 指出/认为」 references stacked inside one chapter |
+| 3 | `chain_method_name` | One paragraph piles 2+ method/model/theory names without per-method elaboration |
+| 3 | `chain_abstract_template` | One paragraph hits 3+ abstract-template phrases |
+| 3 | `chain_conclusion_echo` | Conclusion chapter's opening duplicates the abstract's character Jaccard ≥ 0.30 |
+| 4 | `chain_vague_problem_statement` | 2+ vague problem statements with no metric within 30 chars |
+| 4 | `chain_unsupported_quantification` | 2+ percentage/ranking claims with no 「根据/来源/问卷/N=」 anchor within 80 chars |
+| 4 | `chain_macro_narrative` | 3+ macro-narrative phrases inside a 1000-char window |
+| 5 | `evidence_chain_completeness` | 2+ quantified/research claims lacking method/source/N= anchors (cross-rule) |
+| 5 | `cross_section_problem_trace` | Chapter-3 problems ↔ chapter-5 recommendations keyword overlap < 30% |
+
+### 6. Structured Rewrite Plan (v1.3)
+
+`detect_ai_patterns.AIPatternDetector.generate_report()` and `multi_detector.FusionEngine.detect()` now expose a `modify_plan` key — one `ModifyEntry` per issue:
+
+```json
+{
+  "analyzer_id": "chain_unsupported_quantification",
+  "severity": "high",
+  "location": "global",
+  "evidence": "7 percentage/ranking assertions, 5 lack 「根据/来源/问卷/N=」 anchors within 80 chars",
+  "suggestion": "Anchor every quantitative claim with method/source/N marker",
+  "rewrite_template": "For each quantified claim, supply sample, time window, and statistical scope.",
+  "recommended_replacements": [
+    "Per 'per the Dec 2023 customer survey (N=120), …'",
+    "Sample description: '5-point Likert scale'",
+    "When unverifiable: 'this metric needs further verification'",
+  ],
+  "target_word_count_range": [60, 140]
+}
+```
 
 ---
 
@@ -408,11 +467,12 @@ Research in 2023 shows that 15% of enterprises have such problems.
 humanize-mba-text-skill/
 ├── SKILL.md                          # Claude Skill main file
 ├── README.md                         # Chinese README
-├── README_EN.md                      # English README
-├── README_KR.md                      # Korean README
+├── README_EN.md                      # English README (this file)
+├── README_JP.md                      # 日本語 README
+├── README_KR.md                      # 한국어 README
 ├── LICENSE                           # MIT License
 │
-├── references/                       # Reference documents
+├── references/                       # Reference documents + AI detection rules
 │   ├── ai-writing-patterns.md        # AI writing characteristics guide
 │   ├── chapter-1-introduction.md     # Chapter 1: Introduction guide
 │   ├── chapter-2-theory.md           # Chapter 2: Theory foundation guide
@@ -420,14 +480,39 @@ humanize-mba-text-skill/
 │   ├── chapter-4-solutions.md        # Chapter 4: Solutions guide
 │   ├── chapter-5-conclusion.md       # Chapter 5: Conclusion guide
 │   ├── format-standards.md           # Format standards
-│   ├── strategy_ai_reduction.md      # AI Detection Rate Reduction Strategy ⭐NEW
-│   ├── strategy_plagiarism.md        # Plagiarism Rate Reduction Strategy ⭐NEW
-│   └── strategy_polishing.md         # Academic Polishing Strategy ⭐NEW
+│   ├── strategy_ai_reduction.md      # AI Detection Rate Reduction Strategy
+│   ├── strategy_plagiarism.md        # Plagiarism Rate Reduction Strategy
+│   ├── strategy_polishing.md         # Academic Polishing Strategy
+│   ├── chinese-paper-humanization-rules.toml   # monolithic rule entry (fallback)
+│   └── rules/                        # ⭐v1.3: progress-loadable AI rules
+│       ├── index.toml                #   lightweight manifest
+│       ├── categories/
+│       │   ├── structure.toml        #   structure category
+│       │   ├── rhythm_quality.toml  #   rhythm category
+│       │   ├── formatting.toml       #   formatting category
+│       │   ├── content.toml          #   content (incl. macro-narrative, vague problem, no-source quantification)
+│       │   ├── evidence.toml         #   evidence (incl. data-without-method, causal leap)
+│       │   └── language.toml         #   language category
+│       ├── chapter-categories.toml  #   chapter-type classifier
+│       └── metrics.toml              #   shared metrics wordlists
 │
 └── scripts/                          # Detection scripts
-    ├── detect_ai_patterns.py         # Basic rule detection
-    ├── multi_detector.py             # Multi-scheme fusion detector
-    └── feedback_generator.py         # Feedback generator
+    ├── rule_loader.py                # ⭐v1.3: progressive TOML loader
+    ├── detect_ai_patterns.py         # AIPatternDetector entry (with modify_plan)
+    ├── multi_detector.py             # FusionEngine entry
+    ├── feedback_generator.py         # Feedback generator
+    └── analyzers/                    # ⭐v1.3: analyzer package
+        ├── __init__.py               #   exposes run_prose_analyzers / run_semantic_chain_analyzers / build_modify_plan
+        ├── _types.py                 #   AnalyzerIssue / AnalyzerReport data contracts
+        ├── _segments.py              #   shared segmentation helpers
+        ├── _regex_categories.py      #   hit-level wrapper (used by chain layer)
+        ├── sentence_length.py        #   dimension 6
+        ├── paragraph_length.py       #   dimension 9
+        ├── paragraph_edges.py        #   dimension 10
+        ├── paragraph_structure.py    #   dimension 8a
+        ├── chapter_template.py       #   dimension 8b
+        ├── semantic_chain.py         #   dimensions 3/4/5: 10 chain analyzers
+        └── rewrite_planner.py        #   AnalyzerIssue → structured ModifyEntry
 ```
 
 ---
@@ -491,6 +576,15 @@ Issues and Pull Requests are welcome!
 ---
 
 ## 📝 Changelog
+
+### v1.3.0 (2026-07-05)
+
+- 🔬 **Externalized rules**: All AI-detection rules moved to external TOML, split across 7 categories; `scripts/rule_loader.py` provides progressive loading
+- 📊 **Prose-structure analyzers**: 5 new statistical / fingerprint analyzers (dimensions 6 / 8a / 8b / 9 / 10)
+- 🔗 **Semantic-chain analyzers**: 10 new cross-paragraph / cross-chapter chain analyzers (dimensions 3 / 4 / 5)
+- 📋 **Structured rewrite plan**: `detect_ai_patterns.generate_report` now returns a `modify_plan` key
+- 🎯 **Unified rule source**: `AIPatternDetector` / `StatisticalDetector` / `FeedbackGenerator` share the same TOML rule document
+- 🛠 **New `scripts/analyzers/` package**: single home for the prose + chain analyzer code
 
 ### v1.2.0 (2024-03-11)
 

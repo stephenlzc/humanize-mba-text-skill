@@ -4,7 +4,7 @@
   <img src="https://img.shields.io/badge/Python-3.7+-blue.svg" alt="Python 3.7+">
   <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT">
   <img src="https://img.shields.io/badge/Claude-Skill-orange.svg" alt="Claude Skill">
-  <img src="https://img.shields.io/badge/Version-1.2-brightgreen.svg" alt="Version: 1.2">
+  <img src="https://img.shields.io/badge/Version-1.3-brightgreen.svg" alt="Version: 1.3">
   <img src="https://img.shields.io/badge/Kimi-CLI-blue.svg" alt="Kimi CLI">
   <a href="README.md"><img src="https://img.shields.io/badge/中文-🇨🇳-inactive.svg" alt="中文"></a>
   <a href="README_EN.md"><img src="https://img.shields.io/badge/English-🇺🇸-inactive.svg" alt="English"></a>
@@ -26,6 +26,14 @@
 
 本ツールは**中国のMBA卒業論文**専用に設計されたAI執筆痕跡検出・除去ツールです。MBA論文の学術規範と実践的な要求に基づき、多次元的な検出手法を用いてテキスト内のAI生成特徴を識別し、具体的な修正提案を提供することで、AI生成テキストを自然で人間らしい学術的執筆スタイルに書き換えることを支援します。
 
+### ✨ バージョン1.3の新機能
+
+- 🔬 **ルール外部化**：すべてのAI検出ルールを外部TOMLファイルに移管し、7カテゴリ（`structure / rhythm_quality / formatting / content / evidence / language / chapter-categories`）に分割。ルールはコードから独立し、拡張時にコード変更不要
+- 📊 **散文構造分析器（5つ）**：文長CV / 段落長CV / 段落頭末テンプレート反復 / 段落間構造均一化 / 章節テンプレート反復。各分析器がseverity + confidence + location + evidence + suggestionを発行
+- 🔗 **意味連鎖分析器（10）**：三段式 / 作者列挙 / 方法積み上げ / 要約テンプレート / 結論エコー / 曖昧問題 / 無出所数量化 / 巨大物語 / 証拠連鎖 / 問題-対策追跡 — 段落や章を横断するパターン
+- 📋 **構造化書き換えプラン**：レポートに `modify_plan` キーを追加し、位置・書き換え骨格・推奨置換・目標文字数範囲を提示。severity high → medium → low でソートされ、LLMまたは人手編集に直接入力可能
+- 🎯 **統一ルールソース**：`AIPatternDetector` / `StatisticalDetector` / `FeedbackGenerator` が同じTOMLルール文書を共有
+
 ### ✨ バージョン1.2の新機能
 
 - 📚 **戦略文書の追加**：3つの最適化戦略ファイルを新規追加
@@ -35,12 +43,14 @@
 - 🎓 **MBA規範の詳細化**：MBA論文の核心原則と章別執筆ガイドを拡充
 - 📝 **形式規範の改善**：中国語・英語混在、図表、引用などをカバーする形式標準文書を独立整理
 - 🎯 **実践重視の強化**：データ支援、理論適用、具体的な事例分析をさらに重視
+- 🌐 **多言語README**：日本語版を含む4言語版を整備
 
 ### 核心機能
 
-- ✅ **多次元的AI検出**：ルールマッチング、統計分析、言語特徴の3つの検出手法を統合
+- ✅ **多層AI検出**：正規表現ルール → 散文統計（5次元） → 意味連鎖（10次元）の3層構成
 - ✅ **章別特定ルール**：緒論、理論、分析、提言、結論の5つの章に対応した最適化戦略
 - ✅ **MBA論文規範**：中国の大学MBA論文の字数、構造、形式要件に準拠
+- ✅ **構造化書き換えプラン**：各issueに位置・骨格・推奨置換・目標文字数を付与
 - ✅ **自動修正**：中国語・英語混在のスペースなどの簡単な問題を自動処理
 - ✅ **インテリジェントフィードバック**：詳細な修正提案と前後比較例を生成
 - ✅ **Claude Skill統合**：Claude CodeのSkillとして直接使用可能
@@ -192,6 +202,56 @@ AI痕跡を除去：[テキストを貼り付け]
 - **接続詞密度**：論理接続詞の使用頻度を統計
 - **正式表現パターン**：過度に形式的な学術表現を識別
 - **文型の複雑さ**：複雑な文型の使用状況を分析
+
+### 4. 散文構造分析器（v1.3）
+
+各分析器が `AnalyzerIssue`（analyzer_id / severity / confidence / location / evidence / suggestion）と統計指標を発行：
+
+| 次元 | analyzer_id | トリガー |
+| --- | --- | --- |
+| 6 | `uniform_sentence_length` | 文長分散・CVが閾値超過（段落+全文） |
+| 9 | `uniform_paragraph_length` | 段落間CJK長CV < 0.25 |
+| 10 | `paragraph_edge_template_repeat` | 3+ 連続段落が同一頭末指紋を共有 |
+| 8a | `paragraph_structure_uniformity` | 3+ 連続段落が同一4要素構造指紋を共有 |
+| 8b | `chapter_template_repeat` | 単一章で3+節が同一章節テンプレートを再利用 |
+
+### 5. 意味連鎖分析器（v1.3）
+
+段落や章を横断するAIパターン：
+
+| 次元 | analyzer_id | トリガー |
+| --- | --- | --- |
+| 3 | `chain_three_part_rule` | 3+ 連続段落が「一是…二是…三是」または「まず…次に…最後に」を使用 |
+| 3 | `chain_author_listing` | 単一章で4+「作者(年) 指出/认为」を列挙 |
+| 3 | `chain_method_name` | 単一段落で2+ 方法/モデル/理論名を個別説明なしで積層 |
+| 3 | `chain_abstract_template` | 単一段落が3+ 要約テンプレート語句にヒット |
+| 3 | `chain_conclusion_echo` | 結論章冒頭と緒論冒頭の文字Jaccard ≥ 0.30 |
+| 4 | `chain_vague_problem_statement` | 2+ 曖昧問題表現で30字内に数値根拠なし |
+| 4 | `chain_unsupported_quantification` | 2+ 百分率/順位主張で80字内に「根据/来源/问卷/N=」不在 |
+| 4 | `chain_macro_narrative` | 1000字ウィンドウ内で3+ マクロ物語表現 |
+| 5 | `evidence_chain_completeness` | content+evidence横断：2+ 定量化/調査主張が方法根拠不在 |
+| 5 | `cross_section_problem_trace` | 第3章の問題 ↔ 第5章の対策キーワード重複率 < 30% |
+
+### 6. 構造化書き換えプラン（v1.3）
+
+`detect_ai_patterns.AIPatternDetector.generate_report()` と `multi_detector.FusionEngine.detect()` が `modify_plan` キーを公開：
+
+```json
+{
+  "analyzer_id": "chain_unsupported_quantification",
+  "severity": "high",
+  "location": "global",
+  "evidence": "百分率/順位主張が7件、そのうち5件が80字内に根拠不在",
+  "suggestion": "各定量主張に根拠を付与",
+  "rewrite_template": "サンプル・時間窓・統計スコープを各主張に付与する。",
+  "recommended_replacements": [
+    "「2023年12月顧客アンケート（N=120）によると…」",
+    "サンプル説明：「5段階リカート尺度」",
+    "検証不能時：「本指標は別途検証が必要」",
+  ],
+  "target_word_count_range": [60, 140]
+}
+```
 
 ---
 
@@ -406,11 +466,11 @@ humanize-mba-text-skill/
 ├── SKILL.md                          # Claude Skillメインファイル
 ├── README.md                         # 中国語版
 ├── README_EN.md                      # 英語版
+├── README_JP.md                      # 日本語版（このファイル）
 ├── README_KR.md                      # 韓国語版
-├── README_JP.md                      # 日本語版
 ├── LICENSE                           # MITライセンス
 │
-├── references/                       # 参考文書
+├── references/                       # 参考文書 + AI検出ルール
 │   ├── ai-writing-patterns.md        # AI執筆特徴詳細ガイド
 │   ├── chapter-1-introduction.md     # 第1章：緒論執筆ガイド
 │   ├── chapter-2-theory.md           # 第2章：理論基礎執筆ガイド
@@ -418,14 +478,39 @@ humanize-mba-text-skill/
 │   ├── chapter-4-solutions.md        # 第4章：対策提言執筆ガイド
 │   ├── chapter-5-conclusion.md       # 第5章：結論執筆ガイド
 │   ├── format-standards.md           # 形式規範
-│   ├── strategy_ai_reduction.md      # AI検出率低減戦略 ⭐新規
-│   ├── strategy_plagiarism.md        # 重複率低減戦略 ⭐新規
-│   └── strategy_polishing.md         # 学術的推敲向上戦略 ⭐新規
+│   ├── strategy_ai_reduction.md      # AI検出率低減戦略
+│   ├── strategy_plagiarism.md        # 重複率低減戦略
+│   ├── strategy_polishing.md         # 学術的推敲向上戦略
+│   ├── chinese-paper-humanization-rules.toml   # ルール単一入口（フォールバック）
+│   └── rules/                        # ⭐v1.3：漸進読み込み対応AIルール
+│       ├── index.toml                #   軽量マニフェスト
+│       ├── categories/
+│       │   ├── structure.toml        #   構造カテゴリ
+│       │   ├── rhythm_quality.toml  #   リズムカテゴリ
+│       │   ├── formatting.toml       #   形式カテゴリ
+│       │   ├── content.toml          #   内容（マクロ物語/曖昧問題/無出所数量化を含む）
+│       │   ├── evidence.toml         #   証拠（方法未記載/因果飛躍を含む）
+│       │   └── language.toml         #   言語カテゴリ
+│       ├── chapter-categories.toml  #   章節タイプ分類
+│       └── metrics.toml              #   共通度量語彙
 │
 └── scripts/                          # 検出スクリプト
-    ├── detect_ai_patterns.py         # 基礎ルール検出
-    ├── multi_detector.py             # 多次元融合検出器
-    └── feedback_generator.py         # フィードバック生成器
+    ├── rule_loader.py                # ⭐v1.3：TOMLルール漸進読み込みローダー
+    ├── detect_ai_patterns.py         # AIPatternDetectorエントリ（modify_plan付き）
+    ├── multi_detector.py             # FusionEngineエントリ
+    ├── feedback_generator.py         # フィードバック生成器
+    └── analyzers/                    # ⭐v1.3：分析器パッケージ
+        ├── __init__.py               #   run_prose_analyzers / run_semantic_chain_analyzers / build_modify_plan を公開
+        ├── _types.py                 #   AnalyzerIssue / AnalyzerReport データ契約
+        ├── _segments.py              #   共通セグメンテーションヘルパー
+        ├── _regex_categories.py      #   hitレベルラッパー（連鎖層用）
+        ├── sentence_length.py        #   次元 6
+        ├── paragraph_length.py       #   次元 9
+        ├── paragraph_edges.py        #   次元 10
+        ├── paragraph_structure.py    #   次元 8a
+        ├── chapter_template.py       #   次元 8b
+        ├── semantic_chain.py         #   次元 3/4/5：10連鎖分析器
+        └── rewrite_planner.py        #   AnalyzerIssue → 構造化ModifyEntry
 ```
 
 ---
@@ -489,6 +574,15 @@ IssueとPull Requestの提出を歓迎します！
 ---
 
 ## 📝 更新履歴
+
+### v1.3.0 (2026-07-05)
+
+- 🔬 **ルール外部化**：全AI検出ルールを外部TOMLへ移管し、7カテゴリに分割。`scripts/rule_loader.py`が漸進読み込みを提供
+- 📊 **散文構造分析器**：5つの統計/指紋分析器を追加（次元 6 / 8a / 8b / 9 / 10）
+- 🔗 **意味連鎖分析器**：10の段落/章節横断連鎖分析器を追加（次元 3 / 4 / 5）
+- 📋 **構造化書き換えプラン**：`detect_ai_patterns.generate_report` が `modify_plan` キーを返すように
+- 🎯 **統一ルールソース**：`AIPatternDetector` / `StatisticalDetector` / `FeedbackGenerator` が同じTOMLルール文書を共有
+- 🛠 **新規 `scripts/analyzers/` パッケージ**：散文+連鎖分析器の統合ディレクトリ
 
 ### v1.2.0 (2026-03-11)
 

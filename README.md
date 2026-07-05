@@ -4,7 +4,7 @@
   <img src="https://img.shields.io/badge/Python-3.7+-blue.svg" alt="Python 3.7+">
   <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT">
   <img src="https://img.shields.io/badge/Claude-Skill-orange.svg" alt="Claude Skill">
-  <img src="https://img.shields.io/badge/Version-1.1-brightgreen.svg" alt="Version: 1.1">
+  <img src="https://img.shields.io/badge/Version-1.3-brightgreen.svg" alt="Version: 1.3">
   <img src="https://img.shields.io/badge/Kimi-CLI-blue.svg" alt="Kimi CLI">
   <img src="https://img.shields.io/badge/中文-🇨🇳-red.svg" alt="中文">
   <a href="README_EN.md"><img src="https://img.shields.io/badge/English-🇺🇸-inactive.svg" alt="English"></a>
@@ -26,18 +26,29 @@
 
 这是一个专门为**中国 MBA 毕业论文**设计的 AI 写作痕迹检测与去除工具。基于 MBA 论文的学术规范和实践要求，通过多维度检测方法识别文本中的 AI 生成特征，并提供具体的修改建议，帮助你将 AI 生成的文本改写为自然、人类化的学术写作风格。
 
-### ✨ 版本 1.1 新特性
+### ✨ 版本 1.3 新特性
 
-- 📚 **重构章节文档**：将章节规则拆分为 5 个独立文件，更便于查找和使用
-- 🎓 **细化 MBA 规范**：新增 MBA 论文核心原则和分章节写作指南
-- 📝 **完善格式规范**：独立整理格式标准文档，覆盖中英文混排、图表、引用等
+- 🔬 **规则外置**：所有 AI 检测规则改用外部 TOML 文件维护，按 `structure / rhythm_quality / formatting / content / evidence / language / chapter-categories` 七大类拆分；分析与代码解耦，新增规则无需改动代码
+- 📊 **散文结构分析器（5 个）**：句长 CV / 段长 CV / 段首末模板重复 / 段间结构均一化 / 章节章法模板重复；每个分析器输出 severity + confidence + location + evidence + suggestion 五个字段
+- 🔗 **语义链分析器（10 个）**：三段式 / 作者罗列 / 方法堆叠 / 摘要模板 / 结论回声 / 笼统问题 / 无来源量化 / 宏观叙事 / 证据链完整度 / 问题-对策跨章节追踪；跨段、跨章节模型，捕捉段内看不到的成链模板
+- 📋 **结构化改写计划**：报告新增 `modify_plan` 键，每个问题提供位置、改写骨架、推荐替换句式、目标字数区间；按 severity high → medium → low 排序，可直接对接 LLM 或人工改写
+- 🎯 **三方统一接入**：`AIPatternDetector`、`StatisticalDetector`、`FeedbackGenerator` 共用同一份 TOML 规则，新增类别一处生效
+
+### ✨ 版本 1.2 新特性
+
+- 📚 **三维优化策略**：新增 AI 检测率降低 / 查重率降低 / 学术润色三份策略文档
+- 🔍 **增强检测能力**：规则匹配、统计分析、语言特征三层全面调优
+- 🎓 **细化 MBA 规范**：MBA 论文核心原则和分章节写作指南进一步细化
+- 📝 **完善格式规范**：扩展格式标准文档的边界场景覆盖
 - 🎯 **强化实践导向**：更强调数据支撑、理论应用和具体案例分析
+- 🌐 **多语言 README**：补齐英文 / 日文 / 韩文版本
 
 ### 核心功能
 
-- ✅ **多维度 AI 检测**：结合规则匹配、统计分析和语言特征三种检测方法
+- ✅ **多层级 AI 检测**：从规则匹配（regex）→ 散文统计（5 维 CV/指纹）→ 语义链（10 维跨段/跨章）三层叠加
 - ✅ **章节特定规则**：针对绪论、理论、分析、建议、结论 5 个章节的优化策略
 - ✅ **MBA 论文规范**：符合中国高校 MBA 论文字数、结构、格式要求
+- ✅ **结构化改写计划**：每个 issue 都附 location + skeleton + recommended replacements + 目标字数
 - ✅ **自动修复**：自动处理中英文混排空格等简单问题
 - ✅ **智能反馈**：生成详细的修改建议和前后对比示例
 - ✅ **Claude Skill 集成**：可作为 Claude Code 的 Skill 直接使用
@@ -177,6 +188,56 @@ git clone https://github.com/stephenlzc/humanize-mba-text-skill.git
 - **连接词密度**：统计逻辑连接词使用频率
 - **正式表达模式**：识别过度正式的学术表达
 - **句式复杂度**：分析复杂句式使用情况
+
+### 4. 散文结构分析器（v1.3）
+
+每个分析器返回 `AnalyzerIssue`(analyzer_id / severity / confidence / location / evidence / suggestion) 和统计指标：
+
+| 维度 | analyzer_id | 触发 |
+| --- | --- | --- |
+| 6 | `uniform_sentence_length` | 段落级 + 全文级句长方差/CV 超阈值 |
+| 9 | `uniform_paragraph_length` | 段间字数高度均匀（CV < 0.25） |
+| 10 | `paragraph_edge_template_repeat` | 段首/段末指纹连续 ≥ 3 段相同 |
+| 8a | `paragraph_structure_uniformity` | 跨段四元句式指纹连续 ≥ 3 段相同 |
+| 8b | `chapter_template_repeat` | 单章内 ≥ 3 节使用同一章法模板 |
+
+### 5. 语义链分析器（v1.3）
+
+跨段、跨章节检测 AI 在成链动作上的痕迹：
+
+| 维度 | analyzer_id | 触发 |
+| --- | --- | --- |
+| 3 | `chain_three_part_rule` | 连续 3+ 段使用「一是...二是...三是」或「首先...其次...最后」 |
+| 3 | `chain_author_listing` | 单章 4+ 处「作者(年份)指出/认为」罗列 |
+| 3 | `chain_method_name` | 单段堆叠 2+ 个方法/模型/理论名且无逐方法说明 |
+| 3 | `chain_abstract_template` | 单段命中 3+ 个摘要模板短语 |
+| 3 | `chain_conclusion_echo` | 结论章首段与绪论首段字符级 Jaccard ≥ 0.30 |
+| 4 | `chain_vague_problem_statement` | 2+ 处笼统问题表述且 30 字内无数字支撑 |
+| 4 | `chain_unsupported_quantification` | 2+ 个百分比/排名断言 80 字内无根据/N= 标记 |
+| 4 | `chain_macro_narrative` | 1000 字窗口内 3+ 个宏观叙事短语 |
+| 5 | `evidence_chain_completeness` | 跨 content+evidence 规则：2+ 个量化/调研断言无方法锚点 |
+| 5 | `cross_section_problem_trace` | 问题章 ↔ 对策章关键词重叠率 < 30% |
+
+### 6. 结构化改写计划（v1.3）
+
+`detect_ai_patterns.AIPatternDetector.generate_report()` 和 `multi_detector.FusionEngine.detect()` 都会暴露 `modify_plan` 键，每行一条 `ModifyEntry`：
+
+```json
+{
+  "analyzer_id": "chain_unsupported_quantification",
+  "severity": "high",
+  "location": "global",
+  "evidence": "出现 7 个百分比/排名类断言，其中 5 个 80 字内没有根据/来源",
+  "suggestion": "为每个量化断言补齐来源",
+  "rewrite_template": "为每个量化断言补齐来源：样本、时间、统计口径。",
+  "recommended_replacements": [
+    "根据 2023 年 12 月客户问卷（N=120），...",
+    "样本说明：'问卷采用 5 分制李克特量表'",
+    "无法核实时标注：'该指标需要进一步核实'"
+  ],
+  "target_word_count_range": [60, 140]
+}
+```
 
 ---
 
@@ -389,10 +450,13 @@ MBA论文写作需要关注AI痕迹问题。
 ```
 humanize-mba-text-skill/
 ├── SKILL.md                          # Claude Skill 主文件
-├── README.md                         # 本文件
+├── README.md                         # 本文件（中文）
+├── README_EN.md                      # English README
+├── README_JP.md                      # 日本語 README
+├── README_KR.md                      # 한국어 README
 ├── LICENSE                           # MIT 许可证
 │
-├── references/                       # 参考文档
+├── references/                       # 参考文档 + AI 检测规则数据
 │   ├── ai-writing-patterns.md        # AI写作特征详细指南
 │   ├── chapter-1-introduction.md     # 第1章：绪论写作指南
 │   ├── chapter-2-theory.md           # 第2章：理论基础写作指南
@@ -400,14 +464,39 @@ humanize-mba-text-skill/
 │   ├── chapter-4-solutions.md        # 第4章：对策建议写作指南
 │   ├── chapter-5-conclusion.md       # 第5章：结论写作指南
 │   ├── format-standards.md           # 格式规范
-│   ├── strategy_ai_reduction.md      # 降AI检测率策略 ⭐新增
-│   ├── strategy_plagiarism.md        # 降查重率策略 ⭐新增
-│   └── strategy_polishing.md         # 学术润色策略 ⭐新增
+│   ├── strategy_ai_reduction.md      # 降AI检测率策略
+│   ├── strategy_plagiarism.md        # 降查重率策略
+│   ├── strategy_polishing.md         # 学术润色策略
+│   ├── chinese-paper-humanization-rules.toml   # 规则单体入口（fallback）
+│   └── rules/                        # ⭐v1.3：渐进式加载的 AI 规则集
+│       ├── index.toml                #   轻量 manifest
+│       ├── categories/
+│       │   ├── structure.toml        #   句法结构类
+│       │   ├── rhythm_quality.toml  #   节奏类
+│       │   ├── formatting.toml       #   格式类
+│       │   ├── content.toml          #   内容类（含宏观叙事/笼统问题/无来源量化）
+│       │   ├── evidence.toml         #   证据类（含数据无方法/因果跳跃）
+│       │   └── language.toml         #   语言类
+│       ├── chapter-categories.toml  #   章节类型识别
+│       └── metrics.toml              #   通用度量词表
 │
 └── scripts/                          # 检测脚本
-    ├── detect_ai_patterns.py         # 基础规则检测
-    ├── multi_detector.py             # 多方案融合检测器
-    └── feedback_generator.py         # 反馈生成器
+    ├── rule_loader.py                # ⭐v1.3：TOML 规则渐进式加载器
+    ├── detect_ai_patterns.py         # AIPatternDetector 入口（含 modify_plan）
+    ├── multi_detector.py             # FusionEngine 多源融合入口
+    ├── feedback_generator.py         # 反馈生成器
+    └── analyzers/                    # ⭐v1.3：分析器包（散文 + 语义链 + planner）
+        ├── __init__.py               #   统一导出 run_prose_analyzers / run_semantic_chain_analyzers / build_modify_plan
+        ├── _types.py                 #   AnalyzerIssue / AnalyzerReport 数据契约
+        ├── _segments.py              #   共享分词工具
+        ├── _regex_categories.py      #   hit-level 包装（供链层用）
+        ├── sentence_length.py        #   维度 6
+        ├── paragraph_length.py       #   维度 9
+        ├── paragraph_edges.py        #   维度 10
+        ├── paragraph_structure.py    #   维度 8a
+        ├── chapter_template.py       #   维度 8b
+        ├── semantic_chain.py         #   维度 3/4/5：10 个链分析器
+        └── rewrite_planner.py        #   AnalyzerIssue → 结构化 ModifyEntry
 ```
 
 ---
@@ -471,6 +560,23 @@ done
 ---
 
 ## 📝 更新日志
+
+### v1.3.0 (2026-07-05)
+
+- 🔬 **规则外置**：所有 AI 检测规则改为外部 TOML，按 7 个分类目录拆分；`scripts/rule_loader.py` 提供渐进加载
+- 📊 **散文结构分析器**：新增 5 个统计 / 指纹分析器（维度 6 / 8a / 8b / 9 / 10）
+- 🔗 **语义链分析器**：新增 10 个跨段 / 跨章节链分析器（维度 3 / 4 / 5）
+- 📋 **结构化改写计划**：`detect_ai_patterns.generate_report` 返回 `modify_plan` 键
+- 🎯 **三方统一接入**：`AIPatternDetector` / `StatisticalDetector` / `FeedbackGenerator` 共用同一份 TOML 规则
+- 🛠 **新增 scripts/analyzers/**：作为分析器包统一目录
+
+### v1.2.0 (2024-03-11)
+
+- 📚 **三维优化策略文档化**：新增 AI 检测率降低 / 查重率降低 / 学术润色三份策略文档
+- 🔍 **增强检测能力**：规则匹配、统计分析、语言特征三层全面调优
+- 🎓 **细化 MBA 规范**：MBA 论文核心原则和分章节写作指南进一步细化
+- 📝 **完善格式规范**：扩展格式标准文档的边界场景覆盖
+- 🌐 **多语言 README**：补齐英文 / 日文 / 韩文版本
 
 ### v1.1.0 (2024-02-05)
 
