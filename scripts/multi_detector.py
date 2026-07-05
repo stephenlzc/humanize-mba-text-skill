@@ -15,10 +15,52 @@ import sys
 import json
 import math
 import argparse
-from dataclasses import dataclass, asdict, field
-from typing import List, Dict, Tuple, Optional
-from collections import Counter
+from dataclasses import dataclass, field
+from typing import List, Dict
 from enum import Enum
+
+try:
+    from analyzers import run_prose_analyzers, run_semantic_chain_analyzers
+    from analyzers._types import AnalyzerIssue
+except ImportError:  # imported as package during tests
+    from scripts.analyzers import run_prose_analyzers, run_semantic_chain_analyzers
+    from scripts.analyzers._types import AnalyzerIssue
+
+
+# Maps prose-analyzer ids to the Stat-detector "type" so the existing FusionEngine
+# priority/feature accounting treats them as first-class statistical issues.
+_PROSE_TO_STAT_TYPE = {
+    "uniform_sentence_length": "uniform_sentence_length",
+    "uniform_paragraph_length": "uniform_paragraph_length",
+    "paragraph_edge_template_repeat": "paragraph_edge_template_repeat",
+    "paragraph_structure_uniformity": "paragraph_structure_uniformity",
+    "chapter_template_repeat": "chapter_template_repeat",
+}
+
+# Same mapping for chain analyzers (dimensions 3, 4, 5). The chain ids are
+# already valid stat types; we keep the explicit allow-list so the FusionEngine
+# never leaks analyzer-private ids upstream.
+_CHAIN_TO_STAT_TYPE = {
+    "chain_three_part_rule": "chain_three_part_rule",
+    "chain_author_listing": "chain_author_listing",
+    "chain_method_name": "chain_method_name",
+    "chain_abstract_template": "chain_abstract_template",
+    "chain_conclusion_echo": "chain_conclusion_echo",
+    "chain_vague_problem_statement": "chain_vague_problem_statement",
+    "chain_unsupported_quantification": "chain_unsupported_quantification",
+    "chain_macro_narrative": "chain_macro_narrative",
+    "evidence_chain_completeness": "evidence_chain_completeness",
+    "cross_section_problem_trace": "cross_section_problem_trace",
+}
+
+# Severity -> weight used by FusionEngine's priority calculation.
+_PROSE_WEIGHT = {"high": 0.7, "medium": 0.5, "low": 0.3}
+_CHAIN_WEIGHT = {"high": 0.7, "medium": 0.5, "low": 0.3}
+
+try:
+    from rule_loader import iter_regex_categories
+except ImportError:  # imported as package during tests
+    from scripts.rule_loader import iter_regex_categories
 
 
 class DetectionMethod(Enum):
@@ -58,73 +100,19 @@ class FusionResult:
 class RuleBasedDetector:
     """基于规则的检测器"""
 
-    def __init__(self):
-        self.patterns = {
-            "exaggerated_emphasis": {
-                "patterns": [
-                    r"关键[的是|在于|作用|意义]",
-                    r"重要[的是|意义|价值|作用]",
-                    r"核心[竞争力|要素|能力|优势]",
-                    r"灵魂人物",
-                    r"绝对[是|的]",
-                    r"至关重要",
-                ],
-                "weight": 0.8,
-                "suggestion": "删除价值判断词汇，直接陈述事实",
-            },
-            "ai_buzzwords": {
-                "patterns": [
-                    r"赋能",
-                    r"抓手",
-                    r"闭环",
-                    r"落地",
-                    r"痛点",
-                    r"打法",
-                    r"赛道",
-                    r"生态[系统|圈|链]?",
-                    r"迭代",
-                    r"协同",
-                ],
-                "weight": 1.0,
-                "suggestion": "使用传统学术词汇替代",
-            },
-            "vague_attribution": {
-                "patterns": [
-                    r"[有|据|相关]研究[表明|指出|显示|发现]",
-                    r"专家[指出|认为|表示|强调]",
-                    r"学者[普遍认为|研究发现]",
-                    r"普遍[认为|看来|认同]",
-                ],
-                "weight": 0.9,
-                "suggestion": "明确引用具体文献或删除此类表述",
-            },
-            "surface_analysis": {
-                "patterns": [
-                    r"凸显[了|出][^，。]*[重要性|价值|意义]",
-                    r"反映[了|出][^，。]*[问题|趋势|特征]",
-                    r"体现[了|出][^，。]*[价值|意义|作用]",
-                ],
-                "weight": 0.7,
-                "suggestion": "提供具体机制解释或数据支撑",
-            },
-            "excessive_connectors": {
-                "patterns": [
-                    r"首先[^，。]*其次[^，。]*最后",
-                    r"第一[^，。]*第二[^，。]*第三",
-                    r"此外[^，。]*另外[^，。]*与此同时",
-                ],
-                "weight": 0.6,
-                "suggestion": "减少连接词，使用更自然的过渡",
-            },
-            "spacing_issues": {
-                "patterns": [
-                    r"[\u4e00-\u9fff]\s+[a-zA-Z0-9]",
-                    r"[a-zA-Z0-9]\s+[\u4e00-\u9fff]",
-                ],
-                "weight": 0.5,
-                "suggestion": "删除中英文/数字之间的空格",
-            },
-        }
+    def __init__(self, rule_path=None):
+        self.patterns = self._load_patterns(rule_path)
+
+    def _load_patterns(self, rule_path=None) -> Dict:
+        """Load all rule-based detector patterns from the shared TOML rule file."""
+        patterns = {}
+        for category in iter_regex_categories(rule_path):
+            patterns[category["id"]] = {
+                "patterns": category["regex_patterns"],
+                "weight": category.get("weight", 0.5),
+                "suggestion": "；".join(category["rewrite_principles"]),
+            }
+        return patterns
 
     def detect(self, text: str) -> DetectionResult:
         """执行规则检测"""
@@ -366,6 +354,56 @@ class StatisticalDetector:
             + (0.4 if first_person_density_val < 0.3 else 0) * 0.05  # 缺少第一人称贡献
         )
 
+        # Prose-structure analyzers (dimensions 6, 8, 9, 10, chapter-template).
+        # Their issues are appended to the regular stat-detector issue list and
+        # their metrics show up in `features` so FusionEngine / report readers
+        # do not need a second pass.
+        prose_report = run_prose_analyzers(text)
+        for metric_name, metric_value in prose_report.metrics.items():
+            features[f"prose_{metric_name}"] = metric_value
+        for prose_issue in prose_report.issues:
+            issue_type = _PROSE_TO_STAT_TYPE.get(prose_issue.analyzer_id, prose_issue.analyzer_id)
+            weight = _PROSE_WEIGHT.get(prose_issue.severity, 0.4)
+            issues.append(
+                {
+                    "type": issue_type,
+                    "line": 0,
+                    "content": prose_issue.evidence,
+                    "weight": weight,
+                    "suggestion": prose_issue.suggestion,
+                }
+            )
+        # High-severity prose issues tip the AI probability by up to +0.20 so the
+        # fusion engine surfaces them without doubling the existing calculation.
+        high_prose = sum(1 for i in prose_report.issues if i.severity == "high")
+        medium_prose = sum(1 for i in prose_report.issues if i.severity == "medium")
+        ai_probability += min(0.20, 0.07 * high_prose + 0.03 * medium_prose)
+
+        # Semantic-chain analyzers (dimensions 3, 4, 5). Mirror the prose flow:
+        # chain metrics land in `features` (prefixed ``chain_`` / unprefixed for
+        # dimension 5 ids) and chain issues ride on the same `issues` channel.
+        chain_report = run_semantic_chain_analyzers(text)
+        for metric_name, metric_value in chain_report.metrics.items():
+            features[metric_name] = metric_value
+        for chain_issue in chain_report.issues:
+            issue_type = _CHAIN_TO_STAT_TYPE.get(chain_issue.analyzer_id, chain_issue.analyzer_id)
+            weight = _CHAIN_WEIGHT.get(chain_issue.severity, 0.4)
+            issues.append(
+                {
+                    "type": issue_type,
+                    "line": 0,
+                    "content": chain_issue.evidence,
+                    "weight": weight,
+                    "suggestion": chain_issue.suggestion,
+                }
+            )
+        # Chain issues carry slightly different weight (high evidence gaps are
+        # stronger signals than mid prose anomalies), so we apply a lower cap
+        # of 0.15 to avoid double-counting with prose.
+        high_chain = sum(1 for i in chain_report.issues if i.severity == "high")
+        medium_chain = sum(1 for i in chain_report.issues if i.severity == "medium")
+        ai_probability += min(0.15, 0.05 * high_chain + 0.02 * medium_chain)
+
         return DetectionResult(
             method=DetectionMethod.STATISTICAL,
             ai_probability=min(1.0, ai_probability),
@@ -393,7 +431,7 @@ class LinguisticDetector:
             "由此可见",
         ]
         self.formal_patterns = [
-            r"本文[研究|分析|探讨|旨在]",
+            r"本文(?:研究|分析|探讨|旨在)",
             r"基于[^，。]*分析",
             r"通过[^，。]*发现",
             r"结果表明",

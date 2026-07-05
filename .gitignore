@@ -52,3 +52,27 @@ test_*.json
 # Local development
 *.local
 .env
+
+# Local private corpus and generated samples (private / do not commit)
+human-writing-paper/
+generated_samples/
+*.samples.jsonl
+
+# Local calibration / text-generation tooling (private, not shipped with the skill)
+scripts/*_client.py
+scripts/generate_*_samples.py
+scripts/*_corpus_sampler.py
+docs/superpowers/plans/*samples*.md
+tests/fixtures/*_case_samples.jsonl
+tests/test_*_client.py
+tests/test_generate_*_samples.py
+tests/test_*_corpus_sampler.py
+tests/test_negative_case_samples.py
+
+# Internal design / spec docs and the test suite ship with the source but are
+# kept out of the public repo (develop locally, never push).
+docs/
+tests/
+
+# Specific large reference docs not needed by the public skill.
+references/chinese-paper-rewrite-guide.md

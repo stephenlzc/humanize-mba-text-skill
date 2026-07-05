@@ -14,6 +14,11 @@ import re
 from typing import Dict, List, Tuple
 from dataclasses import dataclass
 
+try:
+    from rule_loader import iter_regex_categories
+except ImportError:  # imported as package during tests
+    from scripts.rule_loader import iter_regex_categories
+
 
 @dataclass
 class ModificationRule:
@@ -31,6 +36,7 @@ class FeedbackGenerator:
 
     def __init__(self):
         self.modification_rules = self._load_modification_rules()
+        self._load_shared_modification_rules()
         self.chapter_templates = self._load_chapter_templates()
 
     def _load_modification_rules(self) -> Dict[str, ModificationRule]:
@@ -38,7 +44,7 @@ class FeedbackGenerator:
         return {
             "exaggerated_emphasis": ModificationRule(
                 issue_type="过度强调",
-                pattern=r"(关键|重要|核心|至关重要)[的是|在于|作用|意义]?",
+                pattern=r"(关键|重要|核心|至关重要)(?:的是|在于|作用|意义)?",
                 replacement="",
                 description="删除价值判断词汇，改为客观陈述",
                 priority="high",
@@ -52,14 +58,14 @@ class FeedbackGenerator:
             ),
             "vague_attribution": ModificationRule(
                 issue_type="模糊归因",
-                pattern=r"([有|据|相关]研究[表明|指出|显示|发现]|专家[指出|认为|表示])",
+                pattern=r"((?:有|据|相关)研究(?:表明|指出|显示|发现)|专家(?:指出|认为|表示))",
                 replacement="",
                 description="明确引用具体文献或删除",
                 priority="high",
             ),
             "surface_analysis": ModificationRule(
                 issue_type="表面分析",
-                pattern=r"(凸显|反映|体现|表明)[了|出][^，。]*[重要性|价值|意义|问题|趋势]",
+                pattern=r"(凸显|反映|体现|表明)(?:了|出)[^，。]*(?:重要性|价值|意义|问题|趋势)",
                 replacement="",
                 description="提供具体数据或机制解释",
                 priority="medium",
@@ -101,7 +107,7 @@ class FeedbackGenerator:
             ),
             "excessive_formal_patterns": ModificationRule(
                 issue_type="正式表达模式过多",
-                pattern=r"(本文[研究|分析|探讨|旨在]|基于[^，。]*分析|通过[^，。]*发现)",
+                pattern=r"(本文(?:研究|分析|探讨|旨在)|基于[^，。]*分析|通过[^，。]*发现)",
                 replacement="",
                 description="适当使用口语化表达",
                 priority="low",
@@ -131,11 +137,13 @@ class FeedbackGenerator:
                 priority="medium",
             ),
             # 新增规则4: 纯客观陈述优化
+            # 注意：不得建议添加“显著/优异/明显”等宣传性词——检测器本身将其视为问题；
+            # 应用具体机制与数据解读代替主观评价。
             "purely_objective": ModificationRule(
                 issue_type="纯客观陈述",
                 pattern=r"实验结果显示[^。]*(为|达到|取得)[\d.]+",
                 replacement="",
-                description="添加主观判断，如'显著'、'优异'等",
+                description="结合具体机制解读数据意义，而非堆砌主观形容词",
                 priority="low",
             ),
             # 新增规则5: 逻辑闭环检测
@@ -163,6 +171,26 @@ class FeedbackGenerator:
                 priority="medium",
             ),
         }
+
+    def _load_shared_modification_rules(self) -> None:
+        """Add TOML-backed rule types so feedback stays aligned with detectors."""
+        for category in iter_regex_categories():
+            category_id = category["id"]
+            if category_id in self.modification_rules:
+                continue
+            patterns = category.get("regex_patterns", [])
+            combined_pattern = "|".join(f"(?:{pattern})" for pattern in patterns)
+            severity = category.get("severity", "medium")
+            priority = severity if severity in {"high", "medium", "low"} else "medium"
+            principles = category.get("rewrite_principles", [])
+            description = "；".join(principles) or category.get("description", "")
+            self.modification_rules[category_id] = ModificationRule(
+                issue_type=category.get("name", category_id),
+                pattern=combined_pattern,
+                replacement="",
+                description=description,
+                priority=priority,
+            )
 
     def _load_chapter_templates(self) -> Dict[str, Dict]:
         """加载章节特定模板"""
@@ -367,9 +395,9 @@ class FeedbackGenerator:
                 "3. 将'一些'替换为具体列举",
             ],
             "purely_objective": [
-                "1. 在数据陈述前添加主观判断词",
-                "2. 如'显著'、'优异'、'明显'等",
-                "3. 体现作者对结果的解读",
+                "1. 用具体机制解释数据为何出现（因果关系）",
+                "2. 补充对比基准或行业水平，让数据自身说话",
+                "3. 避免用'显著/优异/明显'等宣传性形容词拔高",
             ],
             "perfect_logic_loop": [
                 "1. 添加问题背景说明",

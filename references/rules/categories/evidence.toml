@@ -1,0 +1,182 @@
+group = "evidence"
+description = "evidence AI trace rules"
+
+[[categories]]
+id = "invalid_reference_markers"
+name = "异常引用标记"
+severity = "medium"
+weight = 0.65
+description = "出现类似[1][2]但无参考文献、DOI/ISBN格式异常或引用标记漂浮。"
+rewrite_mode = "manual_or_llm"
+signals = ["[1][2]", "doi缺失", "ISBN错误"]
+regex_patterns = ["\\[\\d+\\]\\[\\d+\\]", "DOI[:：]?\\s*(?:待补充|无|N/A)", "ISBN[:：]?\\s*(?:待补充|无|N/A)", "参考文献(?:待补充|略)"]
+false_positive_notes = ["若该表述来自访谈原话、政策原文或文献直接引用，应保留原文并标注来源。", "若同段已经给出具体数据、企业场景或因果机制，可降低风险。", "草稿阶段可有待补引用，但正式交付前必须清理。"]
+rewrite_principles = ["补齐真实引用或删除引用标记。", "核验DOI、ISBN、页码和URL。"]
+
+[[categories.examples]]
+before = "相关研究表明该方法有效[1][2]。"
+after = "张三(2021)与李四(2022)均发现该方法可提高预测准确率。"
+
+[[categories.examples]]
+before = "参考文献待补充。"
+after = ""
+
+[[categories]]
+id = "common_sense_overcitation"
+name = "常识过度引用"
+severity = "low"
+weight = 0.35
+description = "对常识性事实也频繁加引用，像AI为显得可靠而机械补来源。"
+rewrite_mode = "manual_or_llm"
+signals = ["常识也引用", "无争议事实引用"]
+regex_patterns = ["(?:客户|员工|企业|市场)[^。]{0,20}\\[\\d+\\]", "(?:2023年|近年来)[^。]{0,20}\\[\\d+\\]"]
+false_positive_notes = ["若该表述来自访谈原话、政策原文或文献直接引用，应保留原文并标注来源。", "若同段已经给出具体数据、企业场景或因果机制，可降低风险。", "具体数据、政策、定义、争议观点需要引用；本规则仅提示人工复核。"]
+rewrite_principles = ["常识性内容不必强行引用。", "具体数据和观点才保留来源。"]
+
+[[categories.examples]]
+before = "企业需要客户[1]。"
+after = "企业需要稳定客户群。"
+
+[[categories.examples]]
+before = "近年来市场竞争加剧[2]。"
+after = "根据行业协会报告，2023年区域新增3家竞争者。"
+
+[[categories]]
+id = "fake_precision_decimal"
+name = "伪精确数字"
+severity = "medium"
+weight = 0.55
+description = "使用看似精确的小数或百分比，但没有来源、口径或样本说明。"
+rewrite_mode = "manual_or_llm"
+signals = ["提升23.47%", "满意度4.873"]
+regex_patterns = ["\\d+\\.\\d{2,}%", "\\d+\\.\\d{3,}", "约?\\d+\\.\\d{2,}(?:分|万元|人)"]
+false_positive_notes = ["若该表述来自引用、访谈原话或政策文本，应保留并标注来源。", "若同段已有数据、方法说明或案例证据，可降低风险。", "财务报表、统计输出和问卷均值可有小数，但必须给出口径。"]
+rewrite_principles = ["补充具体对象、方法、数据和因果关系。", "删除不提供信息的模板化表达。"]
+
+[[categories.examples]]
+before = "客户满意度提升23.47%。"
+after = "问卷满意度均值从3.62分升至4.47分，提升幅度需结合样本量说明。"
+
+[[categories.examples]]
+before = "成本降低了12.345万元。"
+after = "成本减少约12.3万元，数据来自财务部月度报表。"
+
+[[categories]]
+id = "theory_practice_disconnect"
+name = "理论实践脱节"
+severity = "high"
+weight = 0.75
+description = "先堆理论名称，后面却没有用理论解释案例问题。"
+rewrite_mode = "manual_or_llm"
+signals = ["基于SWOT和PEST", "运用多个理论"]
+regex_patterns = ["基于(?:SWOT|PEST|STP|4P|KPI|OKR|AHP)[^。]*(?:理论|模型|框架)", "综合运用[^。]*(?:理论|模型|框架)[^。]*(?:分析|研究)"]
+false_positive_notes = ["若该表述来自引用、访谈原话或政策文本，应保留并标注来源。", "若同段已有数据、方法说明或案例证据，可降低风险。", "理论基础章节列出理论正常；风险在于后文没有回到案例分析。"]
+rewrite_principles = ["补充具体对象、方法、数据和因果关系。", "删除不提供信息的模板化表达。"]
+
+[[categories.examples]]
+before = "基于SWOT和PEST理论，本文研究公司战略。"
+after = "本文用SWOT识别内部优势与劣势，用PEST分析外部政策和市场环境，并在第4章对应提出战略选择。"
+
+[[categories.examples]]
+before = "综合运用多个模型进行分析。"
+after = "本文只采用STP模型，分别分析细分市场、目标市场和定位。"
+
+[[categories]]
+id = "data_without_method"
+name = "有数据无方法说明"
+severity = "high"
+weight = 0.75
+description = "出现问卷、访谈或调研结果，但未说明样本量、时间、对象或题项。"
+rewrite_mode = "manual_or_llm"
+signals = ["问卷显示", "访谈发现", "调研表明"]
+regex_patterns = ["问卷(?:显示|表明|发现)[^。]*", "访谈(?:显示|表明|发现)[^。]*", "调研(?:显示|表明|发现)[^。]*"]
+false_positive_notes = ["若该表述来自引用、访谈原话或政策文本，应保留并标注来源。", "若同段已有数据、方法说明或案例证据，可降低风险。", "若上下文已说明N、时间和对象，可降低风险。"]
+rewrite_principles = ["补充具体对象、方法、数据和因果关系。", "删除不提供信息的模板化表达。"]
+
+[[categories.examples]]
+before = "问卷显示员工满意度较低。"
+after = "2023年12月问卷（N=120）显示，员工满意度均值为3.1分。"
+
+[[categories.examples]]
+before = "访谈发现流程不清。"
+after = "对6名部门经理的访谈显示，4人认为审批责任划分不清。"
+
+[[categories]]
+id = "causal_leap"
+name = "因果跳跃"
+severity = "high"
+weight = 0.8
+description = "从现象直接跳到原因或对策，中间缺少证据链。"
+rewrite_mode = "manual_or_llm"
+signals = ["因此必须", "由此必然导致", "根本原因是"]
+regex_patterns = ["因此必须[^。]*", "由此(?:必然)?导致[^。]*", "根本原因是[^。]*", "这说明[^。]*(?:必然|一定)"]
+false_positive_notes = ["若该表述来自引用、访谈原话或政策文本，应保留并标注来源。", "若同段已有数据、方法说明或案例证据，可降低风险。", "若前文已有充分回归、访谈或机制分析，可降低风险。"]
+rewrite_principles = ["补充具体对象、方法、数据和因果关系。", "删除不提供信息的模板化表达。"]
+
+[[categories.examples]]
+before = "客户投诉增加，因此必须重塑品牌。"
+after = "客户投诉增加主要集中在售后响应慢，优先应缩短响应时限。"
+
+[[categories.examples]]
+before = "员工流失高，根本原因是文化不足。"
+after = "访谈显示，流失主要与奖金发放周期和晋升通道有关。"
+
+[[categories]]
+id = "unsupported_comparison"
+name = "无基准比较"
+severity = "medium"
+weight = 0.55
+description = "使用更好、更强、领先、优于等比较词，却没有比较对象和基准。"
+rewrite_mode = "manual_or_llm"
+signals = ["明显优于", "行业领先", "更具优势"]
+regex_patterns = ["(?:明显)?优于[^，。]*", "行业领先", "更具(?:优势|竞争力)", "领先水平"]
+false_positive_notes = ["若该表述来自引用、访谈原话或政策文本，应保留并标注来源。", "若同段已有数据、方法说明或案例证据，可降低风险。", "若同句给出竞争对手、行业均值或历史基准，可降低风险。"]
+rewrite_principles = ["补充具体对象、方法、数据和因果关系。", "删除不提供信息的模板化表达。"]
+
+[[categories.examples]]
+before = "该公司服务水平行业领先。"
+after = "该公司投诉响应时间为12小时，低于行业均值24小时。"
+
+[[categories.examples]]
+before = "新方案明显优于旧方案。"
+after = "新方案审批时长为2天，旧方案为5天。"
+
+[[categories]]
+id = "all_purpose_recommendation"
+name = "万能型建议"
+severity = "medium"
+weight = 0.6
+description = "“加强培训、完善制度、提高认识”万能套话，适用于任何论文但不解决具体问题。"
+rewrite_mode = "manual_or_llm"
+signals = ["加强培训", "提高认识", "完善制度"]
+regex_patterns = ["加强(?:员工)?培训", "提高(?:思想)?认识", "完善(?:相关)?制度", "强化(?:责任|意识|管理)"]
+false_positive_notes = ["若该表述来自引用、访谈原话或政策文本，应保留并标注来源。", "若同段已有数据、方法说明或案例证据，可降低风险。", "培训或制度确为问题原因时可保留，但需说明对象、内容和频次。"]
+rewrite_principles = ["补充具体对象、方法、数据和因果关系。", "删除不提供信息的模板化表达。"]
+
+[[categories.examples]]
+before = "企业应加强员工培训。"
+after = "客服部每月进行一次投诉处理流程培训，并用案例复盘考核。"
+
+[[categories.examples]]
+before = "应提高管理层认识。"
+after = "总经理办公会需每月审阅客户流失率和投诉处理时长。"
+
+[[categories]]
+id = "unanchored_policy_context"
+name = "政策背景无锚点"
+severity = "medium"
+weight = 0.55
+description = "引用国家政策或宏观背景，但没有说明与企业案例的关系。"
+rewrite_mode = "manual_or_llm"
+signals = ["国家政策要求", "政策背景下"]
+regex_patterns = ["(?:国家|政府|政策)[^。]*(?:要求|强调|提出)[^。]*", "在[^。]*(?:政策|战略)背景下[^。]*"]
+false_positive_notes = ["若该表述来自引用、访谈原话或政策文本，应保留并标注来源。", "若同段已有数据、方法说明或案例证据，可降低风险。", "政策分析类论文可保留政策背景，但应连接企业具体影响。"]
+rewrite_principles = ["补充具体对象、方法、数据和因果关系。", "删除不提供信息的模板化表达。"]
+
+[[categories.examples]]
+before = "国家政策强调绿色发展。"
+after = "双碳政策使该公司高耗能产线面临能耗考核压力。"
+
+[[categories.examples]]
+before = "在政策背景下企业需要转型。"
+after = "地方补贴政策减少后，该公司新能源汽车销售毛利率下降。"

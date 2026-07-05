@@ -1,0 +1,274 @@
+group = "formatting"
+description = "formatting AI trace rules"
+
+[[categories]]
+id = "mixed_spacing"
+name = "中英文/数字混排空格"
+severity = "high"
+weight = 0.8
+description = "中文语境中，AI输出常在英文、缩写、数字前后保留英文排版空格。"
+rewrite_mode = "auto_fix"
+signals = ["AI 论文", "MBA 论文", "2023 年", "20 %"]
+regex_patterns = ["([\\u4e00-\\u9fff])\\s+([A-Za-z]+[A-Za-z0-9]*)", "([A-Za-z]+[A-Za-z0-9]*)\\s+([\\u4e00-\\u9fff]+?)(?=[，。！？、；：\\s]|在|中|的|和|与|及|为|是|提升|下降|增长|$)", "([\\u4e00-\\u9fff])\\s+(\\d+(?:\\.\\d+)?%?)", "(\\d+(?:\\.\\d+)?)\\s+(%)", "(\\d+(?:\\.\\d+)?%?)\\s+([\\u4e00-\\u9fff]+?)(?=[，。！？、；：\\s]|在|中|的|和|与|及|为|是|提升|下降|增长|$)"]
+false_positive_notes = ["英文整句、代码、公式、URL、文件名中的空格不应自动修复（如“This is a 中文 sentence”“pip install package”）。", "学校或期刊有特殊中英文间距规范（如要求中英文之间加半角空格）时，以模板要求为准。", "英文单词与英文单词之间的空格是正常的，不属于中英混排问题。", "数学区间、单位符号（如“5 kg”“10 m/s”）按学科惯例可保留空格。"]
+rewrite_principles = ["中文和英文缩写之间通常不加空格，如“MBA论文”。", "中文和数字之间通常不加空格，如“2023年”“20%”。", "人名引用与编号也不加空格，如“Smith(2019)”“图2-1”。"]
+
+[[categories.examples]]
+before = "AI 论文在 2023 年提升了 20 %。"
+after = "AI论文在2023年提升了20%。"
+
+[[categories.examples]]
+before = "该公司引入 ERP 系统后，库存周转天数从 45 天降至 32 天。"
+after = "该公司引入ERP系统后，库存周转天数从45天降至32天。"
+
+[[categories.examples]]
+before = "根据 Smith (2019) 的研究，样本量为 120 人。"
+after = "根据Smith(2019)的研究，样本量为120人。"
+
+[[categories]]
+id = "hyphen_chain"
+name = "连字符链式表达"
+severity = "medium"
+weight = 0.7
+description = "AI常用“XXX-XXX-XXX”或“XXX－XXX－XXX”概括流程、模式、框架，容易显得机械。"
+rewrite_mode = "manual_or_llm"
+signals = ["战略-组织-流程", "客户－渠道－服务", "问题—原因—对策"]
+regex_patterns = [
+  "[\\u4e00-\\u9fffA-Za-z0-9]{2,}(?:-|－|—|–|——)[\\u4e00-\\u9fffA-Za-z0-9]{2,}(?:(?:-|－|—|–|——)[\\u4e00-\\u9fffA-Za-z0-9]{2,})+",
+]
+false_positive_notes = ["标准编号、产品型号（如“A-100-X”）、日期范围（如“2020-2023”）、参考文献页码范围（如“pp.12-15”）不应直接判为AI痕迹。", "如果该链式结构是论文中明确定义的模型名称（如“SICAS模型”“SERVQUAL”），只提示检查表达是否需要解释。", "英文连字词（如“state-of-the-art”“long-term”）属于英文习惯用法，不属于中文链式表达。", "化学式、基因名、数学公式中的连字符不应被误判。"]
+rewrite_principles = ["优先改成自然句，说明各环节之间的关系。", "如果保留模型名称，应在首次出现时解释含义，避免只用口号式链条。"]
+
+[[categories.examples]]
+before = "本文构建战略-组织-流程模型。"
+after = "本文从战略目标、组织协同和流程执行三个方面构建分析框架。"
+
+[[categories.examples]]
+before = "公司采用客户－渠道－服务一体化路径。"
+after = "公司围绕客户需求整合渠道与服务，使三者相互支撑。"
+
+[[categories.examples]]
+before = "该方案遵循问题—原因—对策的分析逻辑。"
+after = "该方案先界定问题，再分析成因，最后提出可执行对策。"
+
+[[categories]]
+id = "english_double_quotes"
+name = "中文语境英文双引号"
+severity = "low"
+weight = 0.4
+description = "中文论文正文中夹用英文直双引号，常见于AI或复制输出，应改为中文引号。"
+rewrite_mode = "auto_fix_cautious"
+signals = ["\"流程需要调整\"", "\"关键问题\""]
+regex_patterns = ["[\\u4e00-\\u9fff][^\\n。！？]{0,30}\"[^\"\\n]{1,120}\""]
+false_positive_notes = ["英文原句引用、代码、JSON、命令行参数中的英文引号不应自动替换（如 print(\"hello\")）。", "参考文献题名如保留英文格式，可不替换。", "英文段落内部的英文引号（整段为英文时）应保留，不按中文规范处理。", "若引号内为专有英文术语或品牌名（如 \"Just Do It\"），改中文引号时需保留英文内容。"]
+rewrite_principles = ["中文正文中的引用或强调改为中文双引号。", "替换前确认不是代码、JSON或英文原文引用。"]
+
+[[categories.examples]]
+before = "访谈对象表示\"流程需要调整\"。"
+after = "访谈对象表示“流程需要调整”。"
+
+[[categories.examples]]
+before = "公司将“客户第一\"作为核心理念。"
+after = "公司将“客户第一”作为核心理念。"
+
+[[categories]]
+id = "dash_overuse"
+name = "破折号过度使用"
+severity = "low"
+weight = 0.3
+description = "频繁使用破折号（——）制造强调或解释感，模仿“有力”的销售文案。AI 输出使用破折号的频率明显高于普通人类写作，常把本应用逗号、括号或冒号的地方都换成破折号。该特征需与其他信号结合判断，单独出现不一定是 AI。"
+rewrite_mode = "auto_fix_cautious"
+signals = ["——"]
+regex_patterns = ["——"]
+count_threshold = 3
+false_positive_notes = ["中文论文中偶尔使用破折号是正常的；只有超过阈值（全文>3次）才提示。", "破折号用于标明副标题、范围或对话（如“——记者手记”）时属于规范用法。", "引用原文、古文、文学作品中的破折号应保留。"]
+rewrite_principles = ["使用逗号、括号或独立句替代破折号。", "若为插入说明，优先用括号；若为转折，拆为两句。"]
+
+[[categories.examples]]
+before = "数字化转型是一项长期工程——它需要持续投入——也需要组织配合——才能见效。"
+after = "数字化转型是一项长期工程，需要持续投入和组织配合才能见效。"
+
+[[categories.examples]]
+before = "该制度解决了效率问题——也改善了沟通问题——还促进了文化建设。"
+after = "该制度缩短了审批时长，并减少了跨部门沟通中的重复确认。"
+
+[[categories]]
+id = "list_style"
+name = "列表式行文"
+severity = "medium"
+weight = 0.5
+description = "项目符号后接粗体标题和冒号（如“- **用户体验：**……”），呈现 AI 输出式内联标题列表。AI 倾向把本可写成段落的内容拆成“粗体小标题+冒号+说明”的机械列表，这在正式中文论文正文中十分突兀。"
+rewrite_mode = "manual_or_llm"
+signals = ["- **标题：**"]
+regex_patterns = ["^[\\s]*[•\\-\\*·]\\s+\\*\\*[^*]+\\*\\*[:：]"]
+multiline = true
+false_positive_notes = ["正式论文图表说明、必要清单、参考文献列表可保留，但正文阐述应优先段落化。", "无粗体、无冒号的普通项目符号列表不一定是AI痕迹。", "步骤操作说明、算法伪代码等本来就适合用列表表达。"]
+rewrite_principles = ["将列表转化为连贯的叙述性段落。", "若信息确实并列，可用“首先…其次…”整合为一句话。"]
+
+[[categories.examples]]
+before = "更新改进包括：\n- **用户体验：**通过新界面得到提升。\n- **性能：**通过优化算法得到增强。"
+after = "本次更新改进了操作界面，并通过算法优化加快了响应速度。"
+
+[[categories.examples]]
+before = "主要措施如下：\n- **组织保障：**强化领导责任。\n- **制度保障：**完善考核机制。"
+after = "主要措施包括明确领导责任，并将考核制度落实到部门月度目标中。"
+
+[[categories]]
+id = "markdown_residue"
+name = "Markdown残留"
+severity = "medium"
+weight = 0.55
+description = "正文出现Markdown标题、粗体、代码块、分隔线等痕迹，常见于直接复制AI输出。"
+rewrite_mode = "manual_or_llm"
+signals = ["## 标题", "**重点**", "```"]
+regex_patterns = ["^#{1,6}\\s+.+", "\\*\\*[^*]+\\*\\*", "```", "^---$"]
+false_positive_notes = ["若该表述来自访谈原话、政策原文或文献直接引用，应保留原文并标注来源。", "若同段已经给出具体数据、企业场景或因果机制，可降低风险。", "Markdown文档、README、代码说明中属于正常格式；论文正文中才是风险。"]
+rewrite_principles = ["转换为论文格式标题或正文。", "删除代码块外壳，只保留必要文字。"]
+
+[[categories.examples]]
+before = "## 对策建议\\n**第一点：**加强管理。"
+after = "对策建议包括加强管理，并明确责任部门。"
+
+[[categories.examples]]
+before = "```markdown\\n正文内容\\n```"
+after = "正文内容"
+
+[[categories]]
+id = "emoji_formatting"
+name = "表情符号格式化"
+severity = "low"
+weight = 0.35
+description = "正式论文正文中出现 emoji 装饰标题或列表，明显带有AI/新媒体输出痕迹。"
+rewrite_mode = "manual_or_llm"
+signals = ["🚀", "✅", "💡"]
+regex_patterns = ["[🚀✅💡📌🔥⭐️📈📊🧠]"]
+false_positive_notes = ["若该表述来自访谈原话、政策原文或文献直接引用，应保留原文并标注来源。", "若同段已经给出具体数据、企业场景或因果机制，可降低风险。", "研究对象是社交媒体内容、直播营销素材时，emoji可能是分析对象。"]
+rewrite_principles = ["删除emoji装饰。", "若为研究材料，作为样本引用并说明来源。"]
+
+[[categories.examples]]
+before = "✅ 下一步：完善制度。"
+after = "下一步是完善绩效考核制度。"
+
+[[categories.examples]]
+before = "💡关键洞察：客户需要简单。"
+after = "访谈显示，客户更关注售后响应速度。"
+
+[[categories]]
+id = "bold_overuse"
+name = "粗体过度使用"
+severity = "low"
+weight = 0.4
+description = "正文中机械使用粗体强调概念，像AI生成的说明文或PPT，而非论文正文。"
+rewrite_mode = "manual_or_llm"
+signals = ["**核心变量**", "**关键问题**"]
+regex_patterns = ["\\*\\*[^*]{2,30}\\*\\*", "__[^_]{2,30}__"]
+false_positive_notes = ["若该表述来自访谈原话、政策原文或文献直接引用，应保留原文并标注来源。", "若同段已经给出具体数据、企业场景或因果机制，可降低风险。", "Markdown说明文、README或表格列名中粗体正常；论文正文不宜大量使用。"]
+rewrite_principles = ["删除粗体标记。", "用段落逻辑而非视觉强调表达重点。"]
+
+[[categories.examples]]
+before = "**客户满意度**是影响忠诚度的关键因素。"
+after = "客户满意度是影响忠诚度的因素之一。"
+
+[[categories.examples]]
+before = "**核心问题：**响应速度慢。"
+after = "核心问题是售后响应速度慢。"
+
+[[categories]]
+id = "placeholder_text"
+name = "占位符残留"
+severity = "high"
+weight = 0.9
+description = "出现“请在此处填写”“[公司名称]”“XXX”等模板占位符，说明文本未完成或由模板/AI输出。"
+rewrite_mode = "manual_or_llm"
+signals = ["[公司名称]", "此处填写", "XXX公司"]
+regex_patterns = ["\\[[^\\]]*(?:公司|变量|指标|章节|姓名)[^\\]]*\\]", "请在此处(?:填写|补充|插入)", "XXX(?:公司|企业|指标|变量)", "（此处[^）]+）"]
+false_positive_notes = ["若该表述来自访谈原话、政策原文或文献直接引用，应保留原文并标注来源。", "若同段已经给出具体数据、企业场景或因果机制，可降低风险。", "脱敏文本可用XYZ/某公司，但应统一且明确说明脱敏。"]
+rewrite_principles = ["替换为真实或脱敏后的统一名称。", "删除生成提示语和占位说明。"]
+
+[[categories.examples]]
+before = "[公司名称]应加强客户管理。"
+after = "XYZ公司应缩短客户投诉处理时限。"
+
+[[categories.examples]]
+before = "请在此处补充数据。"
+after = "根据问卷结果（N=120），客户满意度为4.1分。"
+
+[[categories]]
+id = "chatbot_conversation_residue"
+name = "聊天式残留"
+severity = "high"
+weight = 0.85
+description = "正文出现“当然可以”“希望这对你有帮助”“如果你需要我可以”等聊天机器人口吻。"
+rewrite_mode = "manual_or_llm"
+signals = ["当然可以", "希望这对你有帮助", "如果你需要"]
+regex_patterns = ["当然(?:可以|没问题)", "希望这对(?:你|您)有帮助", "如果(?:你|您)需要[^，。]*(?:我可以|请告诉我)", "下面是[^，。]*(?:版本|内容|改写)"]
+false_positive_notes = ["若该表述来自访谈原话、政策原文或文献直接引用，应保留原文并标注来源。", "若同段已经给出具体数据、企业场景或因果机制，可降低风险。", "访谈材料中被访者原话可保留，但正文不能出现聊天助手口吻。"]
+rewrite_principles = ["删除对话式说明。", "只保留正文内容。"]
+
+[[categories.examples]]
+before = "当然可以，下面是修改后的版本。"
+after = ""
+
+[[categories.examples]]
+before = "希望这对你有帮助，如果需要我可以继续扩展。"
+after = ""
+
+[[categories]]
+id = "knowledge_cutoff_disclaimer"
+name = "知识截止免责声明"
+severity = "high"
+weight = 0.8
+description = "出现“截至我最后更新”“作为AI”“资料有限”等模型免责声明。"
+rewrite_mode = "manual_or_llm"
+signals = ["截至我最后的更新", "作为AI", "资料有限"]
+regex_patterns = ["截至(?:我|本人)?(?:最后)?(?:训练|更新|知识)[^，。]*", "作为(?:一个)?AI", "由于(?:资料|信息)(?:有限|不足)", "基于(?:现有|可用)信息"]
+false_positive_notes = ["若该表述来自访谈原话、政策原文或文献直接引用，应保留原文并标注来源。", "若同段已经给出具体数据、企业场景或因果机制，可降低风险。", "研究局限章节可以说明资料不足，但不应出现模型自称。"]
+rewrite_principles = ["删除模型免责声明。", "改为学术局限说明，并写清资料来源。"]
+
+[[categories.examples]]
+before = "截至我最后的知识更新，该公司资料有限。"
+after = "由于未获得公司2024年内部数据，本文仅分析2021—2023年公开资料。"
+
+[[categories.examples]]
+before = "作为AI，我无法确认该数据。"
+after = "该数据未能核实，本文不予采用。"
+
+[[categories]]
+id = "prompt_leakage"
+name = "提示词/检索痕迹残留"
+severity = "high"
+weight = 0.9
+description = "正文出现turn0search0、请提供需要翻译的内容、提示词段落等模型内部痕迹。"
+rewrite_mode = "manual_or_llm"
+signals = ["turn0search0", "请提供需要翻译的内容", "根据提示"]
+regex_patterns = ["turn\\d+(?:search|source)\\d+", "请提供需要(?:翻译|润色|改写)的内容", "根据(?:你|您)的(?:提示|要求)", "以下是(?:根据|按照)[^，。]*生成"]
+false_positive_notes = ["若该表述来自访谈原话、政策原文或文献直接引用，应保留原文并标注来源。", "若同段已经给出具体数据、企业场景或因果机制，可降低风险。", "技术附录讨论AI工具时可出现这些字符串，但应作为研究对象并加说明。"]
+rewrite_principles = ["删除提示词残留。", "若是引用AI输出样本，放入附录并标注。"]
+
+[[categories.examples]]
+before = "根据您的要求，以下是论文绪论。"
+after = ""
+
+[[categories.examples]]
+before = "参考turn0search0可知该企业成立于1998年。"
+after = "根据公司官网，该企业成立于1998年。"
+
+[[categories]]
+id = "title_colon_vertical_list"
+name = "标题冒号式垂直列表"
+severity = "medium"
+weight = 0.5
+description = "用“标题：说明”连续垂直排列，像AI回答而非论文段落。"
+rewrite_mode = "manual_or_llm"
+signals = ["问题：", "原因：", "对策："]
+regex_patterns = ["^[\\u4e00-\\u9fffA-Za-z]{2,10}[:：]\\s*[^\\n]+", "(?:问题|原因|对策|建议|结论)[:：][^\\n]+"]
+false_positive_notes = ["若该表述来自引用、访谈原话或政策文本，应保留并标注来源。", "若同段已有数据、方法说明或案例证据，可降低风险。", "表格、访谈提纲或附录清单中可保留。"]
+rewrite_principles = ["补充具体对象、方法、数据和因果关系。", "删除不提供信息的模板化表达。"]
+
+[[categories.examples]]
+before = "问题：客户流失率高。\\n原因：服务响应慢。"
+after = "客户流失率较高，主要原因是售后响应慢。"
+
+[[categories.examples]]
+before = "对策：完善制度。"
+after = "对策是将投诉响应时限从48小时缩短到24小时。"

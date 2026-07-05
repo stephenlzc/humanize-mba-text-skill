@@ -1,0 +1,34 @@
+[[chapter_categories]]
+id = "literature_review"
+name = "文献综述特征"
+severity = "medium"
+suggestion = "按主题组织，进行比较分析，指出研究空白"
+regex_patterns = ["\\w+\\(\\d{4}\\)[^，。]*认为[^，。]*", "\\w+\\(\\d{4}\\)[^，。]*指出[^，。]*", "大量研究(?:表明|显示|证明)", "现有研究(?:主要|多|大多)"]
+
+[[chapter_categories]]
+id = "case_analysis"
+name = "案例分析特征"
+severity = "medium"
+suggestion = "精简背景，聚焦研究问题，提供具体数据"
+regex_patterns = ["该公司成立于\\d+年", "总部位于[^，。]+", "员工\\d+人", "年营收[^，。]*亿元", "由此可见[^，。]*"]
+
+[[chapter_categories]]
+id = "strategy"
+name = "战略建议特征"
+severity = "high"
+suggestion = "建议具体可操作，考虑约束条件，明确优先级"
+regex_patterns = ["建议[^，。]*加强[^，。]*", "建议[^，。]*优化[^，。]*", "建议[^，。]*提升[^，。]*", "通过这些措施[^，。]*"]
+
+[[chapter_categories]]
+id = "abstract"
+name = "摘要AI特征"
+severity = "medium"
+suggestion = "摘要应简洁明了，避免模板化表述，突出核心创新"
+regex_patterns = ["本文针对[^，。]*问题[^，。]*提出了", "本文研究了[^，。]*", "结果表明[^，。]*", "本文的主要贡献", "实验结果表明[^，。]*"]
+
+[[chapter_categories]]
+id = "methodology"
+name = "方法描述模板化"
+severity = "medium"
+suggestion = "方法描述应突出创新点，解释设计决策原因，避免纯流程化叙述"
+regex_patterns = ["该模块包含[^，。]*组件", "本方法分为[^，。]*步骤", "首先[^，。]*然后[^，。]*最后[^，。]*", "第一阶段[^，。]*第二阶段[^，。]*第三阶段", "输入[^，。]*经过[^，。]*输出"]

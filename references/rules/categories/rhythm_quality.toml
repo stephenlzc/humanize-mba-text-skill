@@ -1,0 +1,62 @@
+group = "rhythm_quality"
+description = "rhythm quality AI trace rules"
+
+[[categories]]
+id = "academic_formality"
+name = "学术表达问题"
+severity = "medium"
+weight = 0.5
+description = "结果表述只有数值或被动套式（“被用于/被验证”），缺少作者对数据意义的解读。AI 倾向以纯客观、无人称的方式罗列数据，不解释为何出现、意味着什么，使论文缺少作者视角与管理洞察。注意：本类不鼓励用“显著/优异”等形容词拔高，而是用机制与对比解释。"
+rewrite_mode = "manual_or_llm"
+signals = ["实验结果显示准确率为", "结果表明达到", "被用于"]
+regex_patterns = ["实验结果显示[^。]*(?:MSE|MAE|准确率|精度|召回率|F1)[^为]*为[\\d.]+", "结果表明[^，。]*达到[\\d.]+%", "被(?:用于|应用于|证明|验证|用来)"]
+false_positive_notes = ["实证结果段可包含数值，只要后文配合解释就不属于问题。", "被动语态在方法或客观表述中有时是必要的（如“样本被随机分为两组”），不应一律判为问题。", "自然科学/工程类论文对客观语气要求更高，此类风险应适当调低。"]
+rewrite_principles = ["结合具体机制解读数据意义。", "避免堆砌主观形容词，用对比基准让数据自身说话。"]
+
+[[categories.examples]]
+before = "实验结果显示准确率为92.5%。"
+after = "模型准确率为92.5%，高于原人工审核的83%；提升主要来自对异常交易的识别能力。"
+
+[[categories.examples]]
+before = "该模型被用于预测客户流失。"
+after = "本文将该模型用于预测客户流失，并用近两年的实际流失数据检验其准确性。"
+
+[[categories]]
+id = "uniform_sentence_rhythm"
+name = "句式节奏过于均匀"
+severity = "medium"
+weight = 0.55
+description = "连续句子长度和结构过于相似，呈现低突发性、低变化的AI节奏。"
+rewrite_mode = "manual_or_llm"
+signals = ["句长相近", "结构重复"]
+regex_patterns = ["[^。]{18,28}。[^。]{18,28}。[^。]{18,28}。", "[^。]*了[^。]*。[^。]*了[^。]*。[^。]*了[^。]*。"]
+false_positive_notes = ["若该表述来自访谈原话、政策原文或文献直接引用，应保留原文并标注来源。", "若同段已经给出具体数据、企业场景或因果机制，可降低风险。", "摘要或定义段可较整齐，但全文持续均匀会显得机械。"]
+rewrite_principles = ["混合长短句。", "合并或拆分句子，使信息节奏自然。"]
+
+[[categories.examples]]
+before = "企业提升了效率。企业降低了成本。企业改善了服务。"
+after = "方案实施后，效率提升15%，成本下降8%；服务投诉也有所减少。"
+
+[[categories.examples]]
+before = "本文分析了问题。本文提出了方案。本文验证了效果。"
+after = "本文先分析问题，再提出方案，并通过试点数据验证效果。"
+
+[[categories]]
+id = "simple_synonym_rewrite"
+name = "浅层同义替换"
+severity = "medium"
+weight = 0.55
+description = "仅把词替换成同义词而不改变语义结构，容易留下查重/AI共同风险。"
+rewrite_mode = "manual_or_llm"
+signals = ["提升→提高", "优化→完善", "重要→关键"]
+regex_patterns = ["(?:提升|提高|增强)[^。]{0,20}(?:能力|水平)", "(?:优化|完善|改进)[^，。]{0,8}(?:管理体系|考核机制|服务体系|运营机制)", "(?:重要|关键|核心)[^。]{0,20}(?:作用|意义)"]
+false_positive_notes = ["若该表述来自访谈原话、政策原文或文献直接引用，应保留原文并标注来源。", "若同段已经给出具体数据、企业场景或因果机制，可降低风险。", "这些词本身不是问题；风险在于全文只有同义替换，没有结构重组和证据补充。"]
+rewrite_principles = ["改写角度和句法结构。", "补充企业场景、数据或因果解释。"]
+
+[[categories.examples]]
+before = "提升管理水平。"
+after = "通过月度绩效面谈提高主管反馈质量。"
+
+[[categories.examples]]
+before = "完善激励机制。"
+after = "将项目奖金权重从10%提高到20%，并按季度发放。"

@@ -1,0 +1,62 @@
+version = "2026-07-04"
+language = "zh-CN"
+domain = "Chinese MBA thesis humanization"
+
+[split_rules]
+schema_version = 1
+description = "Progressive rule loading index. Load this index first, then selected rule files by group or category id."
+
+[design_principles.language_signals]
+summary = "中文AI写作特征的结构化归纳：过度强调、宣传语气、模糊归因、表面分析、公式化结构等。"
+
+[design_principles.false_positive_awareness]
+summary = "特征只是信号而非铁证；不能单凭特征断定AI，需结合语境，避免机械误伤。"
+
+[design_principles.category_scoring]
+summary = "将特征拆为结构化类别，逐类评分再聚合为风险判断。"
+
+[design_principles.multi_reviewer_aggregation]
+summary = "可由多个专职评审视角分别打分，再汇总为整体风险与修改优先级。"
+
+[user_constraints]
+preserve_original_meaning = true
+do_not_fabricate_data = true
+do_not_fabricate_citations = true
+prefer_mba_academic_style = true
+require_enterprise_context = true
+require_data_source_when_data_added = true
+avoid_overly_mechanical_rewriting = true
+
+[[rule_files]]
+id = "content"
+path = "categories/content.toml"
+category_ids = ["exaggerated_emphasis", "vague_attribution", "surface_analysis", "macro_narrative", "promotional_language", "empty_theoretical_practical_value", "vague_problem_statement", "unsupported_quantification", "overbroad_scope", "empty_research_gap"]
+
+[[rule_files]]
+id = "language"
+path = "categories/language.toml"
+category_ids = ["ai_buzzwords", "excessive_connectors", "negative_parallelism", "cliche_phrases", "throat_clearing_openers", "filler_phrases", "vague_quantifiers", "abstract_noun_stack", "predictable_academic_verbs", "hedging_overload", "synonym_loop", "formulaic_sentence_openers", "repetitive_sentence_endings", "overbalanced_pairing", "metaphorical_bloat", "overuse_of_dimensions", "overuse_of_framework", "unnecessary_so_what", "overconfident_recommendation"]
+
+[[rule_files]]
+id = "formatting"
+path = "categories/formatting.toml"
+category_ids = ["mixed_spacing", "hyphen_chain", "english_double_quotes", "dash_overuse", "list_style", "markdown_residue", "emoji_formatting", "bold_overuse", "placeholder_text", "chatbot_conversation_residue", "knowledge_cutoff_disclaimer", "prompt_leakage", "title_colon_vertical_list"]
+
+[[rule_files]]
+id = "structure"
+path = "categories/structure.toml"
+category_ids = ["sentence_patterns", "three_part_rule", "challenge_outlook_formula", "abstract_template", "conclusion_echo_abstract", "author_listing_lit_review", "method_name_pileup", "empty_solution_verbs", "problem_solution_mismatch", "missing_constraints_in_solutions", "empty_transition_paragraph"]
+
+[[rule_files]]
+id = "evidence"
+path = "categories/evidence.toml"
+category_ids = ["invalid_reference_markers", "common_sense_overcitation", "fake_precision_decimal", "theory_practice_disconnect", "data_without_method", "causal_leap", "unsupported_comparison", "all_purpose_recommendation", "unanchored_policy_context"]
+
+[[rule_files]]
+id = "rhythm_quality"
+path = "categories/rhythm_quality.toml"
+category_ids = ["academic_formality", "uniform_sentence_rhythm", "simple_synonym_rewrite"]
+
+[support_files]
+chapter_categories = "chapter-categories.toml"
+metrics = "metrics.toml"

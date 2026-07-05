@@ -1,0 +1,8 @@
+version = "2026-07-04"
+language = "zh-CN"
+domain = "Chinese MBA thesis humanization"
+
+[split_rules]
+directory = "rules"
+index = "index.toml"
+description = "Lightweight manifest. Full AI-trace rules are split under references/rules/ for progressive loading."

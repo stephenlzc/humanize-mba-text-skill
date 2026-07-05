@@ -501,6 +501,10 @@ python scripts/multi_detector.py input.txt --interactive
 
 ## 参考文档
 
+### 共享规则与指南
+- `references/chinese-paper-humanization-rules.toml` - Python 自动读取的检测与改写规则源
+- `references/chinese-paper-rewrite-guide.md` - 规则源的人读版与测试样例说明
+
 ### 三维优化策略
 - `references/strategy_ai_reduction.md` - 降低AI检测率策略详解
 - `references/strategy_plagiarism.md` - 降低查重率策略详解

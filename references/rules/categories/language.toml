@@ -1,0 +1,382 @@
+group = "language"
+description = "language AI trace rules"
+
+[[categories]]
+id = "ai_buzzwords"
+name = "AI词汇/互联网黑话"
+severity = "high"
+weight = 1.0
+description = "使用“赋能/抓手/闭环/痛点/打法/赛道/打通/心智/颗粒度/组合拳/护城河”等互联网黑话与商业锥子黑话，使论文表达口号化、口语化。这类词在 2023 年后的 AI 文本中密度明显升高，且常成簇出现；而传统 MBA 论文更倾向使用规范的管理学术用语。"
+rewrite_mode = "manual_or_llm"
+signals = ["赋能", "抓手", "闭环", "痛点", "打通", "颗粒度", "护城河"]
+regex_patterns = ["赋能", "抓手", "闭环", "痛点", "打法", "赛道", "生态(?:系统|圈|链)", "打通", "心智", "颗粒度", "对齐颗粒度", "组合拳", "护城河"]
+false_positive_notes = ["转型、优化、升级、机制、架构、框架、挑战、显著、集成、协同等是MBA论文常用词，不能单独作为AI痕迹。", "“生态”在环境管理、产业生态学等语境中是正式术语（如“产业生态”“商业生态系统”），需结合上下文判断是否为黑话。", "“痛点”若出现在引用的访谈原话或企业内部资料中，属于引用，不直接判为作者用词。", "若行业术语确实包含这类词（如金融“护城河”已是常见投资术语），可保留但建议首次出现时给出定义。"]
+rewrite_principles = ["使用传统学术词汇替代互联网黑话：赋能→促进/支持，抓手→切入点/措施，闭环→闭合回路/完整流程。", "若必须保留，需说明具体管理含义和操作对象。"]
+
+[[categories.examples]]
+before = "数字化转型赋能业务创新，形成从生产到服务的完整闭环。"
+after = "数字化改造使生产到售后的流程数据打通，订单处理时长从5天缩短至2天。"
+
+[[categories.examples]]
+before = "企业需要找到吗增长的新抓手，解决客户痛点。"
+after = "企业需要新的增长措施，回应客户在售后响应速度上的不满（投诉占比达32%）。"
+
+[[categories]]
+id = "excessive_connectors"
+name = "连接词过多"
+severity = "medium"
+weight = 0.6
+description = "“首先/其次/最后”“第一/第二/第三”“此外/另外/与此同时”等连接词密集出现，使段落呈现机械、模板化结构。AI 倾向用这类显式序列词把内容“摆整齐”，而成熟作者更多靠段落结构和因果关系自然过渡。"
+rewrite_mode = "manual_or_llm"
+signals = ["首先…其次…最后", "第一…第二…第三", "此外…另外…与此同时"]
+regex_patterns = ["首先[^，。]*其次[^，。]*最后", "第一[^，。]*第二[^，。]*第三", "此外[^，。]*另外[^，。]*与此同时"]
+false_positive_notes = ["论文结构说明、章节导航（如“本文第一章……第二章……第三章……”）中可允许适量序列词。", "研究方法、实验步骤描述中的序号属于必要流程说明，不一定是模板化。", "只出现一两个序列词、并非整段堆叠时，风险较低。"]
+rewrite_principles = ["减少连接词，使用更自然的过渡。", "通过段落结构和因果关系体现逻辑。"]
+
+[[categories.examples]]
+before = "首先，本文回顾了相关文献。其次，构建了理论模型。最后，进行了实证检验。"
+after = "本文先回顾相关文献，在此基础上构建理论模型，并通过实证数据检验研究假设。"
+
+[[categories.examples]]
+before = "首先提升了效率，其次降低了成本，最后增强了竞争力。"
+after = "方案实施后，运营效率提升15%，管理成本下降8%，市场份额从12%升至18%。"
+
+[[categories]]
+id = "negative_parallelism"
+name = "否定式排比"
+severity = "low"
+weight = 0.4
+description = "“不仅……而且……”“这不是……而是……”“既不是……也不是……”等否定/对立句式密集出现，试图为平凡内容赋予深层意义。AI 用这类“区分+定义”句式让文章显得有思想，但实际上往往只是修辞堆砌，删掉也不影响信息。"
+rewrite_mode = "manual_or_llm"
+signals = ["不仅……而且……", "既不是……也不是……", "这不是……而是……"]
+regex_patterns = ["不仅[^，。]*而且[^，。]*", "既不是[^，。]*也不是[^，。]*", "不仅[^，。]*还[^，。]*", "无论[^，。]*还是[^，。]*"]
+false_positive_notes = ["少量正常让步或并列（全文仅出现一两次）不构成高风险。", "“无论……还是……”用于罗列真实并列情形（如“无论国有还是民营企业”）时属于正常表述。", "引用他人原话中的对立句式不计入作者用词。"]
+rewrite_principles = ["拆分为简单句或直接陈述。", "保留必要逻辑，删除表演式对照。"]
+
+[[categories.examples]]
+before = "数字化转型不仅提升了效率，而且降低了成本。"
+after = "数字化转型使效率提升15%，成本下降8%。"
+
+[[categories.examples]]
+before = "这不是一次普通的改革，而是一场深刻的变革。"
+after = "此次改革调整了绩效考核与薪酬挂钩方式，涉及全部三个业务部门。"
+
+[[categories]]
+id = "cliche_phrases"
+name = "套话式表达"
+severity = "medium"
+weight = 0.6
+description = "“在……背景下”“随着……的发展”“通过……可以发现”“尽管……但前景广阔”等套话过多。这些是 AI 生成开场白与过渡句的高发区，它们只填充篇幅而不提供实质信息，尤其“挑战与展望”式结尾在 AI 文本中非常典型。"
+rewrite_mode = "manual_or_llm"
+signals = ["在……背景下", "随着……的发展", "通过……可以发现", "尽管……但前景广阔"]
+regex_patterns = ["尽管[^，。]*面临挑战[^，。]*但[^，。]*前景", "在[^，。]*背景下", "随着[^，。]*的发展", "基于以上分析[^，。]*", "通过[^，。]*可以发现"]
+false_positive_notes = ["绪论/研究背景章节可有少量背景句，但不应连续堆叠。", "“在……背景下”若后接具体、可验证的企业情境（如“在公司亏损两年的背景下”），风险较低。", "“随着……的发展”若陈述的是具体可查证的行业事实并附数据，可保留。"]
+rewrite_principles = ["具体问题具体分析，避免套话。", "直接写企业、问题和证据。"]
+
+[[categories.examples]]
+before = "在市场竞争日益激烈的背景下，企业面临诸多挑战。"
+after = "XYZ公司2022—2023年市场份额从12%降至9%，主要原因是区域内新增3家竞争对手。"
+
+[[categories.examples]]
+before = "尽管面临诸多挑战，但企业发展前景依然广阔。"
+after = "当前主要风险是应收账款周转天数升至90天；若不改善现金流，将影响2024年产能扩张计划。"
+
+[[categories]]
+id = "throat_clearing_openers"
+name = "空转开场白"
+severity = "low"
+weight = 0.45
+description = "以“值得注意的是”“需要指出的是”“不可否认的是”等空转短语开头，延迟进入信息本身。"
+rewrite_mode = "manual_or_llm"
+signals = ["值得注意的是", "需要指出的是", "不可否认的是"]
+regex_patterns = ["值得注意的是", "需要指出的是", "不可否认的是", "毋庸置疑", "诚然[^，。]*"]
+false_positive_notes = ["若该表述来自访谈原话、政策原文或文献直接引用，应保留原文并标注来源。", "若同段已经给出具体数据、企业场景或因果机制，可降低风险。", "转折段落中少量使用可接受，但不应每段都用。"]
+rewrite_principles = ["删除空转短语，直接写事实。", "确需强调时换成具体证据。"]
+
+[[categories.examples]]
+before = "值得注意的是，该公司客户流失率较高。"
+after = "该公司2023年客户流失率为18%。"
+
+[[categories.examples]]
+before = "不可否认的是，数字化转型具有重要意义。"
+after = "数字化改造后，订单处理时长由5天降至2天。"
+
+[[categories]]
+id = "filler_phrases"
+name = "填充短语"
+severity = "low"
+weight = 0.4
+description = "使用“为了实现这一目标”“在这个过程中”“从某种程度上看”等填充词增加篇幅。"
+rewrite_mode = "manual_or_llm"
+signals = ["为了实现这一目标", "在这个过程中", "从某种程度上看"]
+regex_patterns = ["为了实现这一目标", "在这个过程中", "从某种程度上(?:看|来说)", "在一定程度上", "某种意义上"]
+false_positive_notes = ["若该表述来自访谈原话、政策原文或文献直接引用，应保留原文并标注来源。", "若同段已经给出具体数据、企业场景或因果机制，可降低风险。", "过渡句可以存在，但连续使用会稀释信息密度。"]
+rewrite_principles = ["删除不增加信息的填充短语。", "把过渡改成具体动作或因果关系。"]
+
+[[categories.examples]]
+before = "为了实现这一目标，企业需要加强管理。"
+after = "企业需要将库存预警阈值从30天调整为20天。"
+
+[[categories.examples]]
+before = "在这个过程中，沟通发挥了重要作用。"
+after = "跨部门例会将采购、销售和仓储数据统一到同一张周报中。"
+
+[[categories]]
+id = "vague_quantifiers"
+name = "模糊数量词"
+severity = "medium"
+weight = 0.55
+description = "用“很多/一些/较多/大部分/若干”等模糊数量词代替可核实范围。"
+rewrite_mode = "manual_or_llm"
+signals = ["很多问题", "一些员工", "较多客户"]
+regex_patterns = ["很多(?:问题|员工|客户|企业|因素)", "一些(?:问题|员工|客户|企业|因素)", "较多(?:问题|员工|客户|企业|因素)", "大部分(?:员工|客户|企业)", "若干(?:问题|因素|措施)"]
+false_positive_notes = ["若该表述来自访谈原话、政策原文或文献直接引用，应保留原文并标注来源。", "若同段已经给出具体数据、企业场景或因果机制，可降低风险。", "访谈原话中使用模糊数量可保留，但正文分析应补样本数。"]
+rewrite_principles = ["替换为具体数量、比例或范围。", "无法量化时说明信息来源和不确定性。"]
+
+[[categories.examples]]
+before = "很多员工对考核不满意。"
+after = "在访谈的18名研发人员中，11人认为考核周期过长。"
+
+[[categories.examples]]
+before = "一些客户反映售后不及时。"
+after = "问卷中32%的客户将售后响应慢列为首要问题。"
+
+[[categories]]
+id = "abstract_noun_stack"
+name = "抽象名词堆叠"
+severity = "medium"
+weight = 0.6
+description = "连续堆叠“能力/水平/体系/机制/路径/模式/价值”等抽象名词，句子缺少动作主体。"
+rewrite_mode = "manual_or_llm"
+signals = ["能力建设水平", "机制体系路径", "价值实现模式"]
+regex_patterns = ["(?:能力|水平|体系|机制|路径|模式|价值|效能|质量){2,}", "(?:管理|服务|创新|治理|协同){2,}(?:能力|体系|机制|路径)", "[^，。]{0,8}(?:能力建设|体系构建|机制完善|路径优化)[^，。]{0,8}"]
+false_positive_notes = ["若该表述来自访谈原话、政策原文或文献直接引用，应保留原文并标注来源。", "若同段已经给出具体数据、企业场景或因果机制，可降低风险。", "专业术语组合（如“质量管理体系”）可保留，关键看是否连续堆叠且缺少动作。"]
+rewrite_principles = ["拆成主体、动作、对象。", "用具体管理动作替代抽象名词串。"]
+
+[[categories.examples]]
+before = "提升企业管理能力建设水平。"
+after = "通过月度绩效面谈提高部门主管的反馈质量。"
+
+[[categories.examples]]
+before = "完善客户服务协同机制体系。"
+after = "将客服、销售和仓储的投诉处理流程合并到同一系统中。"
+
+[[categories]]
+id = "predictable_academic_verbs"
+name = "可预测学术动词堆叠"
+severity = "low"
+weight = 0.4
+description = "反复使用“探讨/分析/研究/阐述/论述”等泛化学术动词，缺少具体研究动作。"
+rewrite_mode = "manual_or_llm"
+signals = ["分析问题", "探讨对策", "研究影响"]
+regex_patterns = ["(?:研究|分析|探讨|阐述|论述)[^，。]{0,8}(?:问题|现状|对策|影响)"]
+false_positive_notes = ["若该表述来自访谈原话、政策原文或文献直接引用，应保留原文并标注来源。", "若同段已经给出具体数据、企业场景或因果机制，可降低风险。", "题目、摘要、章节标题中出现“研究/分析”正常；风险在于整段只用泛化动词。"]
+rewrite_principles = ["改成具体动作：访谈、问卷、对比、测算、归因。", "说明分析对象和数据来源。"]
+
+[[categories.examples]]
+before = "本文分析员工激励问题。"
+after = "本文基于18名员工访谈和120份问卷分析激励不足的原因。"
+
+[[categories.examples]]
+before = "本文探讨营销策略。"
+after = "本文比较线上直播、门店促销和会员折扣三种策略的转化率。"
+
+[[categories]]
+id = "hedging_overload"
+name = "过度限定"
+severity = "low"
+weight = 0.35
+description = "用“可能/或许/一定程度上/潜在地”等限定词过度软化判断，导致结论虚浮。"
+rewrite_mode = "manual_or_llm"
+signals = ["可能会", "一定程度上", "潜在地"]
+regex_patterns = ["可能会[^，。]*(?:产生|带来|影响)", "在一定程度上[^，。]*", "潜在(?:地)?[^，。]*(?:可能|影响)", "或许[^，。]*"]
+false_positive_notes = ["若该表述来自访谈原话、政策原文或文献直接引用，应保留原文并标注来源。", "若同段已经给出具体数据、企业场景或因果机制，可降低风险。", "研究局限或预测性结论中使用限定词是必要的。"]
+rewrite_principles = ["保留必要不确定性，但删除重复限定。", "用证据范围说明不确定性。"]
+
+[[categories.examples]]
+before = "该政策可能会在一定程度上对结果产生一些影响。"
+after = "该政策可能影响客户续费率，影响方向需结合后续季度数据验证。"
+
+[[categories.examples]]
+before = "这种做法或许能够潜在地提升满意度。"
+after = "该做法预计提升满意度，但需通过试点问卷验证。"
+
+[[categories]]
+id = "synonym_loop"
+name = "刻意换词循环"
+severity = "medium"
+weight = 0.55
+description = "为避免重复而反复替换同一概念，如主体/角色/人物/对象轮换，造成指代混乱。"
+rewrite_mode = "manual_or_llm"
+signals = ["主体/对象/角色轮换", "同一概念多称谓"]
+regex_patterns = ["(?:主体|对象|角色|个体|人员)[^。]{0,40}(?:主体|对象|角色|个体|人员)[^。]{0,40}(?:主体|对象|角色|个体|人员)", "(?:企业|公司|组织|主体)[^。]{0,40}(?:企业|公司|组织|主体)[^。]{0,40}(?:企业|公司|组织|主体)"]
+false_positive_notes = ["若该表述来自访谈原话、政策原文或文献直接引用，应保留原文并标注来源。", "若同段已经给出具体数据、企业场景或因果机制，可降低风险。", "不同概念确有区分时不算问题；风险在于同一对象无必要换称。"]
+rewrite_principles = ["同一概念保持术语一致。", "必要换称时先定义关系。"]
+
+[[categories.examples]]
+before = "该主体需要改善服务，对象应提升能力，相关角色还需加强协同。"
+after = "该公司需要改善客户服务，并加强销售与客服部门的协同。"
+
+[[categories.examples]]
+before = "企业、组织和主体都应关注客户。"
+after = "该企业应关注客户留存率。"
+
+[[categories]]
+id = "formulaic_sentence_openers"
+name = "句首模板重复"
+severity = "low"
+weight = 0.4
+description = "连续句子以“本文/本研究/通过/基于/从……角度”开头，节奏机械。"
+rewrite_mode = "manual_or_llm"
+signals = ["本文…本文…本文…", "通过…通过…"]
+regex_patterns = ["(?:本文|本研究)[^。]*。(?:本文|本研究)[^。]*。", "通过[^。]*。通过[^。]*。", "基于[^。]*。基于[^。]*。"]
+false_positive_notes = ["若该表述来自访谈原话、政策原文或文献直接引用，应保留原文并标注来源。", "若同段已经给出具体数据、企业场景或因果机制，可降低风险。", "摘要中重复“本文”较常见，但全文多处重复会显得机械。"]
+rewrite_principles = ["合并重复句首。", "用对象、数据或结果作句首变化节奏。"]
+
+[[categories.examples]]
+before = "本文分析现状。本文提出方案。本文验证效果。"
+after = "本文先分析现状，再提出方案并验证效果。"
+
+[[categories.examples]]
+before = "通过问卷识别问题。通过访谈分析原因。"
+after = "问卷用于识别问题，访谈用于分析原因。"
+
+[[categories]]
+id = "repetitive_sentence_endings"
+name = "句尾模板重复"
+severity = "low"
+weight = 0.4
+description = "多个句子以“具有重要意义/提供参考/奠定基础/发挥作用”等模板句尾结束。"
+rewrite_mode = "manual_or_llm"
+signals = ["具有重要意义", "提供参考", "奠定基础"]
+regex_patterns = ["具有(?:重要)?(?:意义|价值)\\s*。", "提供(?:了)?(?:重要)?参考\\s*。", "奠定(?:了)?(?:坚实)?基础\\s*。", "发挥(?:了)?(?:重要)?作用\\s*。"]
+false_positive_notes = ["若该表述来自访谈原话、政策原文或文献直接引用，应保留原文并标注来源。", "若同段已经给出具体数据、企业场景或因果机制，可降低风险。", "章节结尾偶尔总结可接受；连续使用则风险较高。"]
+rewrite_principles = ["删除模板句尾。", "把结论改成具体发现或下一步安排。"]
+
+[[categories.examples]]
+before = "该研究具有重要意义。"
+after = "该研究提出了适合XYZ公司的季度考核方案。"
+
+[[categories.examples]]
+before = "上述措施为后续发展奠定基础。"
+after = "上述措施将审批节点从7个减少到4个。"
+
+[[categories]]
+id = "overbalanced_pairing"
+name = "机械平衡句"
+severity = "low"
+weight = 0.4
+description = "喜欢用“既要…又要…”“一方面…另一方面…”制造平衡感，但内容空泛。"
+rewrite_mode = "manual_or_llm"
+signals = ["既要又要", "一方面另一方面"]
+regex_patterns = ["既要[^，。]*又要[^，。]*", "一方面[^，。]*另一方面[^，。]*", "既[^，。]*也[^，。]*"]
+false_positive_notes = ["若该表述来自引用、访谈原话或政策文本，应保留并标注来源。", "若同段已有数据、方法说明或案例证据，可降低风险。", "真实两难或资源权衡可保留，但应写清冲突。"]
+rewrite_principles = ["补充具体对象、方法、数据和因果关系。", "删除不提供信息的模板化表达。"]
+
+[[categories.examples]]
+before = "企业既要提升效率，又要控制成本。"
+after = "企业需在不增加人员编制的情况下，将订单处理时长从5天压缩到3天。"
+
+[[categories.examples]]
+before = "一方面要加强管理，另一方面要完善制度。"
+after = "应将审批权限下放到部门经理，并建立月度复盘机制。"
+
+[[categories]]
+id = "metaphorical_bloat"
+name = "隐喻式拔高"
+severity = "medium"
+weight = 0.5
+description = "用引擎、基石、蓝图、航向、纽带等隐喻拔高管理问题。"
+rewrite_mode = "manual_or_llm"
+signals = ["发展引擎", "坚实基石", "战略蓝图"]
+regex_patterns = ["(?:发展|增长)引擎", "坚实(?:基础|基石)", "战略蓝图", "指明(?:方向|航向)", "重要纽带"]
+false_positive_notes = ["若该表述来自引用、访谈原话或政策文本，应保留并标注来源。", "若同段已有数据、方法说明或案例证据，可降低风险。", "标题或宣传材料中可有隐喻；论文正文应少用。"]
+rewrite_principles = ["补充具体对象、方法、数据和因果关系。", "删除不提供信息的模板化表达。"]
+
+[[categories.examples]]
+before = "客户关系管理是企业增长的重要引擎。"
+after = "客户关系管理影响复购率，2023年老客户销售额占比为62%。"
+
+[[categories.examples]]
+before = "绩效考核为企业发展奠定坚实基石。"
+after = "绩效考核决定60%的浮动薪酬分配。"
+
+[[categories]]
+id = "overuse_of_dimensions"
+name = "维度滥用"
+severity = "medium"
+weight = 0.45
+description = "过度使用“维度”包装普通分类，造成AI式抽象化。"
+rewrite_mode = "manual_or_llm"
+signals = ["三个维度", "多维度"]
+regex_patterns = ["(?:多个|多维度|三个|四个)维度", "从[^，。]*维度(?:出发|展开|分析)", "在[^，。]*维度上"]
+false_positive_notes = ["若该表述来自引用、访谈原话或政策文本，应保留并标注来源。", "若同段已有数据、方法说明或案例证据，可降低风险。", "量表、指标体系或理论模型中的维度是正式术语。"]
+rewrite_principles = ["补充具体对象、方法、数据和因果关系。", "删除不提供信息的模板化表达。"]
+
+[[categories.examples]]
+before = "从服务维度、管理维度和文化维度展开。"
+after = "从售后响应、会员权益和门店服务三个问题展开。"
+
+[[categories.examples]]
+before = "多维度提升客户体验。"
+after = "缩短响应时限、提高权益兑现率，并统一门店服务流程。"
+
+[[categories]]
+id = "overuse_of_framework"
+name = "框架/体系泛化"
+severity = "medium"
+weight = 0.5
+description = "频繁使用框架、体系、机制、路径等词包装空泛内容。"
+rewrite_mode = "manual_or_llm"
+signals = ["构建体系", "形成框架", "探索路径"]
+regex_patterns = ["构建[^，。]*(?:体系|框架)", "形成[^，。]*(?:机制|路径)", "探索[^，。]*(?:路径|模式)", "打造[^，。]*(?:体系|平台)"]
+false_positive_notes = ["若该表述来自引用、访谈原话或政策文本，应保留并标注来源。", "若同段已有数据、方法说明或案例证据，可降低风险。", "若后文列出具体组成、指标或流程，可降低风险。"]
+rewrite_principles = ["补充具体对象、方法、数据和因果关系。", "删除不提供信息的模板化表达。"]
+
+[[categories.examples]]
+before = "构建客户服务体系。"
+after = "将投诉受理、分派、反馈三个环节纳入同一工单系统。"
+
+[[categories.examples]]
+before = "探索数字化转型路径。"
+after = "先在生产计划环节上线MES，再扩展到库存管理。"
+
+[[categories]]
+id = "unnecessary_so_what"
+name = "意义拔高结尾"
+severity = "low"
+weight = 0.4
+description = "段尾用“意义深远”“价值重大”“影响深刻”强行回答so what。"
+rewrite_mode = "manual_or_llm"
+signals = ["意义深远", "价值重大", "影响深刻"]
+regex_patterns = ["意义(?:重大|深远)", "价值(?:重大|深远|显著)", "影响(?:深刻|深远)", "具有(?:里程碑|划时代)意义"]
+false_positive_notes = ["若该表述来自引用、访谈原话或政策文本，应保留并标注来源。", "若同段已有数据、方法说明或案例证据，可降低风险。", "政策文件或历史研究可讨论重大意义，但MBA案例应给证据。"]
+rewrite_principles = ["补充具体对象、方法、数据和因果关系。", "删除不提供信息的模板化表达。"]
+
+[[categories.examples]]
+before = "该研究意义深远。"
+after = "该研究为XYZ公司下季度绩效改革提供操作方案。"
+
+[[categories.examples]]
+before = "该举措影响深刻。"
+after = "该举措将审批时长从5天缩短到2天。"
+
+[[categories]]
+id = "overconfident_recommendation"
+name = "过度确定性建议"
+severity = "medium"
+weight = 0.55
+description = "用必须、一定、必然、确保等绝对词描述尚未验证的建议。"
+rewrite_mode = "manual_or_llm"
+signals = ["必须确保", "必然提升", "一定能够"]
+regex_patterns = ["必须[^，。]*(?:确保|实现|完成)", "必然[^，。]*(?:提升|降低|改善)", "一定能够[^，。]*", "确保[^，。]*(?:全面|有效|显著)"]
+false_positive_notes = ["若该表述来自引用、访谈原话或政策文本，应保留并标注来源。", "若同段已有数据、方法说明或案例证据，可降低风险。", "法规、强制标准中的“必须”可保留。"]
+rewrite_principles = ["补充具体对象、方法、数据和因果关系。", "删除不提供信息的模板化表达。"]
+
+[[categories.examples]]
+before = "该方案必然提升客户满意度。"
+after = "该方案预计提升客户满意度，需通过试点问卷验证。"
+
+[[categories.examples]]
+before = "企业必须确保全面落地。"
+after = "企业应先在两个门店试点，评估后再推广。"
