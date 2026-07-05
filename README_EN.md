@@ -647,6 +647,7 @@ This project uses [MIT License](LICENSE) - see LICENSE file for details
 ## 🔗 Related Projects
 
 - [thesis-optimizer](https://github.com/Haimbeau1o/thesis-optimizer) - Academic Paper Intelligent Optimization System (Computer Deep Learning Direction)
+- [cangtianhuang/humanizer-academic-zh](https://github.com/cangtianhuang/humanizer-academic-zh) - Humanizer Chinese Academic Edition: a complementary *rewrite + polish* Skill to our *detect + quantify* path. Its 25-pattern taxonomy is grouped into 5 categories (expression / language / style / fillers / communication residue). v1.3.0 of this project merged patterns 21–25 into the progressive-load TOML (`references/rules/categories/*.toml`) as `filler_phrases` (boosted), `chatbot_conversation_residue` (boosted), `sycophantic_praise` (new), etc.
 
 ---
 

@@ -628,6 +628,7 @@ done
 ## 🔗 相关项目
 
 - [thesis-optimizer](https://github.com/Haimbeau1o/thesis-optimizer) - 学术论文智能优化系统（计算机深度学习方向）
+- [cangtianhuang/humanizer-academic-zh](https://github.com/cangtianhuang/humanizer-academic-zh) - Humanizer 中文学术版：与本项目「检测 + 量化定位」路径互补的「改写 + 润色」Skill；25 类语义模式按表达 / 语言 / 风格 / 填充词 / 交流痕迹五大类组织。本项目 v1.3.0 已将其中「模式 21-25」并入渐进式加载的 `references/rules/categories/*.toml`（`filler_phrases` / `chatbot_conversation_residue` / `sycophantic_praise` 等）。
 
 ---
 

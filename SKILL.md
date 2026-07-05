@@ -130,46 +130,19 @@ python scripts/feedback_generator.py detection_result.json --text input.txt --ap
 | 输出 | `AnalyzerIssue` + `modify_plan` | 表格化识别人性化润色版本 |
 | 强项 | 维度 3-5 的跨段/跨章链检测、量化报告 | 模式词典丰富、对中文学术语感的精确判断 |
 
-`humanizer-academic-zh` 把 AI 模式分成 5 大类共 25 小类。其中下面 4 类（即其模式 21-25）本 Skill 目前**没有等价检测规则**——填补这一空白的两种做法：
+`humanizer-academic-zh` 把 AI 模式分成 5 大类共 25 小类。本 Skill 已将其中部分模式并入**渐进式加载的 manifest**——具体落位：
 
-1. 直接调用 `humanizer-academic-zh` 的 Claude Skill 做改写润色；
-2. 把下面 4 个模式加入 `references/rules/categories/content.toml` 的新 `[[categories]]` 条目，让本 Skill 也能识别。
+| humanizer-academic-zh 模式 | 本 Skill 的 `category_id` | 状态 |
+| --- | --- | --- |
+| 模式 21 填充短语 | [`filler_phrases`](references/rules/categories/language.toml) | 增强 +3 条正则，覆盖「具有处理……的能力」「不难发现，两人之间存在」「需要指出的是，」 |
+| 模式 22 过度对冲 | [`hedging_overload`](references/rules/categories/language.toml) | 已有覆盖，本版本不动 |
+| 模式 23 协作式沟通痕迹 | [`chatbot_conversation_residue`](references/rules/categories/formatting.toml) | 增强 +2 条正则：「亲爱?的?读者」「如下所示」+「以下是 … 修改/改写/润色 …」 |
+| 模式 24 知识截止免责 | [`knowledge_cutoff_disclaimer`](references/rules/categories/formatting.toml) | 已有覆盖，本版本不动 |
+| 模式 25 谄媚语气 | [`sycophantic_praise`](references/rules/categories/language.toml) | **新增** `[[categories]]`，severity=medium / weight=0.5 |
 
-### 模式 21：填充短语
+所有上述模式的 `category_id` 都登记在 [`references/rules/index.toml`](references/rules/index.toml) 的 `category_ids` 列表里，由 `scripts/rule_loader.iter_regex_categories` 自动发现。新增模式无须改代码——只要在对应 category 文件里加一行 `regex_patterns` 项即可。
 
-> 命中即建议简化。
-
-| 填充 | 简化建议 |
-| --- | --- |
-| 为了实现这一目标 | 为此 |
-| 由于……这一事实 | 因为 |
-| 在当前这个时间节点 | 目前 |
-| 具有处理……的能力 | 可以处理 |
-| 值得注意的是，数据显示 | 数据显示 |
-| 不难发现，两者之间存在 | 两者之间存在 |
-| 需要指出的是，该方法 | 该方法 |
-
-### 模式 22：过度对冲
-
-过度限定陈述，叠加多个同义/近义的模糊限定词。处理：删除重复、同义叠加的限定词，保留必要的学术审慎。
-
-### 模式 23：协作式沟通痕迹
-
-> 一段内出现的"希望对你有帮助"、"当然！"、"这里是一份……"必须**彻底删除**。
-
-学术论文中常以"亲爱的读者"或"如下所示"伪装出现，处理原则与 `humanizer-academic-zh` 一致：直接删除所有聊天机器人客套话。
-
-### 模式 24：知识截止免责
-
-> 命中词："截至[日期]"、"根据现有信息"。
-
-论文中正常说明时间/资料范围的表达**予以保留**；纯粹用"截至我的知识截止日期"开头的免责语**全部删除**。
-
-### 模式 25：谄媚语气
-
-> 命中词："绝佳的"、"令人惊叹的"、"非常出色的"。
-
-学术写作应客观冷静；所有过于正面、讨好的评价性词汇应改为中性描述或删除。
+剩余模式（22 类人文化的句式、连接词密度、否定式排比等）已在原 `language.toml` 的 19 个 category 里独立实现，不与 humanizer-academic-zh 的分类一一对应；两套体系互补不冲突。
 
 ## 参考文档
 

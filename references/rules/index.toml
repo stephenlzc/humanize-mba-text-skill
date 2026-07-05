@@ -35,7 +35,7 @@ category_ids = ["exaggerated_emphasis", "vague_attribution", "surface_analysis",
 [[rule_files]]
 id = "language"
 path = "categories/language.toml"
-category_ids = ["ai_buzzwords", "excessive_connectors", "negative_parallelism", "cliche_phrases", "throat_clearing_openers", "filler_phrases", "vague_quantifiers", "abstract_noun_stack", "predictable_academic_verbs", "hedging_overload", "synonym_loop", "formulaic_sentence_openers", "repetitive_sentence_endings", "overbalanced_pairing", "metaphorical_bloat", "overuse_of_dimensions", "overuse_of_framework", "unnecessary_so_what", "overconfident_recommendation"]
+category_ids = ["ai_buzzwords", "excessive_connectors", "negative_parallelism", "cliche_phrases", "throat_clearing_openers", "filler_phrases", "vague_quantifiers", "abstract_noun_stack", "predictable_academic_verbs", "hedging_overload", "synonym_loop", "formulaic_sentence_openers", "repetitive_sentence_endings", "overbalanced_pairing", "metaphorical_bloat", "overuse_of_dimensions", "overuse_of_framework", "unnecessary_so_what", "overconfident_recommendation", "sycophantic_praise"]
 
 [[rule_files]]
 id = "formatting"

@@ -652,6 +652,7 @@ IssueとPull Requestの提出を歓迎します！
 ## 🔗 関連プロジェクト
 
 - [thesis-optimizer](https://github.com/Haimbeau1o/thesis-optimizer) - 学術論文インテリジェント最適化システム（コンピュータ深層学習方向）
+- [cangtianhuang/humanizer-academic-zh](https://github.com/cangtianhuang/humanizer-academic-zh) - Humanizer 中文学術版：本プロジェクトの「検出＋定量位置特定」経路を補完する「書き換え＋推敲」Skill。25類セマンティックパターンは表現/言語/スタイル/フィラー/コミュニケーション残滓の5大類に分類。本プロジェクトv1.3.0でパターン21〜25を漸進ロードTOML（`references/rules/categories/*.toml`）に統合（`filler_phrases`強化、`chatbot_conversation_residue`強化、`sycophantic_praise`新規追加など）。
 
 ---
 

@@ -629,6 +629,7 @@ Issue와 Pull Request를 환영합니다!
 ## 🔗 관련 프로젝트
 
 - [thesis-optimizer](https://github.com/Haimbeau1o/thesis-optimizer) - 학술 논문 지능형 최적화 시스템(컴퓨터 딥러닝 방향)
+- [cangtianhuang/humanizer-academic-zh](https://github.com/cangtianhuang/humanizer-academic-zh) - Humanizer 중문학술판: 본 프로젝트의 "감지 + 정량 위치 지정" 경로를 보완하는 "재작성 + 윤문" Skill. 25개 시맨틱 패턴을 표현/언어/스타일/필러/커뮤니케이션 잔재 5대 분류로 정리. 본 프로젝트 v1.3.0에서 패턴 21-25를 점진 로드 TOML(`references/rules/categories/*.toml`)에 통합(`filler_phrases` 강화, `chatbot_conversation_residue` 강화, `sycophantic_praise` 신규 추가 등).
 
 ---
 
