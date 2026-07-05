@@ -614,6 +614,7 @@ done
 - 感谢 Kimi CLI 提供的 Agent 并行执行工具
 - 感谢所有提供反馈和建议的用户
 - **特别感谢 [Haimbeau1o/thesis-optimizer](https://github.com/Haimbeau1o/thesis-optimizer) 项目**，本项目的三维协同优化策略（降AI检测率、降查重率、学术润色提升）参考了该项目的优秀设计
+- **改写策略参考 [cangtianhuang/humanizer-academic-zh](https://github.com/cangtianhuang/humanizer-academic-zh)**：本项目走「检测 + 量化定位」路径，该项目走「改写 + 润色」路径；其 25 类语义模式（按表达/语言/风格/填充词/交流痕迹五大类组织）的「模式 21-25」被本项目 SKILL.md 的补充参考节交叉引用
 
 ---
 

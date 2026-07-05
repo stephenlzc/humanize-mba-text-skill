@@ -615,6 +615,7 @@ Issue와 Pull Request를 환영합니다!
 - 피드백과 제안을 제공한 모든 사용자에게 감사드립니다
 - **특히 [Haimbeau1o/thesis-optimizer](https://github.com/Haimbeau1o/thesis-optimizer) 프로젝트에 감사드립니다**. 본 프로젝트의 3차원 협동 최적화 전략(AI 감지율 감소, 표절률 감소, 학술 윤문 향상)은 해당 프로젝트의 우수한 설계를 참고하였습니다
 - Kimi CLI의 서브 에이전트 개발 지원에 감사드립니다
+- **재작성 전략 참고: [cangtianhuang/humanizer-academic-zh](https://github.com/cangtianhuang/humanizer-academic-zh)**. 본 프로젝트는 '감지 + 정량 위치 지정' 경로를 따르고, 해당 프로젝트는 '재작성 + 윤문' 경로를 따릅니다. 해당 프로젝트의 25개 시맨틱 패턴(표현/언어/스타일/필러/커뮤니케이션 잔재의 5대 분류)을 본 프로젝트 SKILL.md의 '보충 참고' 절에서 상호 참조, 특히 본 프로젝트에서 다루지 않는 패턴 21-25를 명시
 
 ---
 

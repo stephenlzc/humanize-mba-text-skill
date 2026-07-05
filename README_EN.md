@@ -633,6 +633,7 @@ This project uses [MIT License](LICENSE) - see LICENSE file for details
 - Thanks to Kimi CLI for providing the Agent parallel execution tools
 - Thanks to all users who provided feedback and suggestions
 - **Special thanks to the [Haimbeau1o/thesis-optimizer](https://github.com/Haimbeau1o/thesis-optimizer) project**, whose three-dimensional collaborative optimization strategy (AI detection rate reduction, plagiarism rate reduction, academic polishing enhancement) inspired this project's design
+- **Rewrite strategy reference: [cangtianhuang/humanizer-academic-zh](https://github.com/cangtianhuang/humanizer-academic-zh)** — this project takes the *detect + quantify* path, while that project takes the *rewrite + polish* path; its 25-pattern taxonomy (organised into 5 categories: expression / language / style / fillers / communication residue) is cross-referenced from our SKILL.md's "supplementary reference" section, especially patterns 21-25 that we do not currently model
 
 ---
 

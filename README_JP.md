@@ -638,6 +638,7 @@ IssueとPull Requestの提出を歓迎します！
 - Kimi CLIが提供するAgent並列実行ツールに感謝
 - フィードバックと提案を提供してくださったすべてのユーザーに感謝
 - **特別に[Haimbeau1o/thesis-optimizer](https://github.com/Haimbeau1o/thesis-optimizer)プロジェクトに感謝**。本プロジェクトの三次元協同最適化戦略（AI検出率低減、重複率低減、学術的推敲向上）は、同プロジェクトの優れた設計を参考にしています
+- **書き換え戦略参考：[cangtianhuang/humanizer-academic-zh](https://github.com/cangtianhuang/humanizer-academic-zh)**。本プロジェクトは「検出+定量位置特定」の経路を取り、当該プロジェクトは「書き換え+推敲」の経路を取る。同プロジェクトの25類セマンティックパターン（表現/言語/スタイル/フィラー/コミュニケーション残滓の5大類に分類）のうち「パターン21-25」を本プロジェクトSKILL.mdの補足参考節で相互参照
 
 ---
 

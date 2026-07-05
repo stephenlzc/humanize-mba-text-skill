@@ -1,0 +1,120 @@
+# Three-Dimensional Optimization Strategy + Evaluation Standards
+#
+# Reference data for `SKILL.md` — the human-facing 三维协同优化策略
+# section plus the quantitative/qualitative evaluation table.
+#
+# Schema choices:
+# - Each dimension is a `[dimensions.<id>]` table so callers can iterate via
+#   `tomllib.load("references/strategy_optimization.toml")` and reach for a
+#   specific dimension by name.
+# - Strategies are kept as flat ordered lists so a rule-driven LLM can follow
+#   them in order without having to interpret paragraphs.
+# - Evaluation tables split into `quantitative` (with `target` + `indicator`)
+#   and `qualitative` (freeform description), mirroring the original README
+#   wording so the migration is lossless.
+
+version = "1.3.0"
+language = "zh-CN"
+domain = "MBA thesis humanization"
+
+[meta]
+purpose = "三维协同优化策略与评估标准的结构化数据。"
+context = "SKILL.md 第「三维协同优化策略」与「评估标准」两节的源数据。"
+loader_note = "目前为人类/Claude 阅读设计；如果后续需要 LLM 自动消费，可写一个 load_strategy() 工具。"
+
+# ---------------------------------------------------------------------------
+# 三个维度
+# ---------------------------------------------------------------------------
+
+[dimensions.anti_ai_detection]
+name = "维度1：降低AI检测率"
+goal = "通过改写让文本通过常见 AI 检测器而不被认定由生成式模型产出。"
+core_strategies = [
+  "句式多样化：打破规整并列结构，引入句长变化（目标：句长标准差 > 8）",
+  "学术语气自然化：适当使用第一人称（\"本文\"、\"我们\"），引入合理主观判断",
+  "逻辑链路人性化：增加背景铺垫，避免过于完美的逻辑闭环",
+]
+
+[dimensions.plagiarism_reduction]
+name = "维度2：降低查重率"
+goal = "在保留原意的前提下，把与既有文献/网络的字面重合度降下来。"
+core_strategies = [
+  "深度语义改写：同义替换、结构重组、表述角度转换",
+  "引用规范化：直接引用转间接引用，归并多源引用",
+  "专业术语处理：核心术语保留，非核心描述灵活变换",
+]
+
+[dimensions.academic_polish]
+name = "维度3：学术润色提升"
+goal = "在不被检测器盯上的前提下，达到可被 MBA 导师接受的学术写作规范。"
+core_strategies = [
+  "表达精准化：消除模糊表述，量化抽象概念",
+  "学术规范性：术语一致性，时态语态规范",
+  "可读性优化：复杂句拆分，段落结构优化",
+]
+
+# ---------------------------------------------------------------------------
+# 改写流程（6 步）
+# ---------------------------------------------------------------------------
+
+[[workflow.step]]
+order = 1
+title = "通读原文"
+purpose = "理解核心观点和论证逻辑"
+
+[[workflow.step]]
+order = 2
+title = "多维度检测"
+purpose = "同时检测 AI 特征、评估查重风险、检查学术规范性"
+
+[[workflow.step]]
+order = 3
+title = "降AI优化"
+purpose = "应用句式多样化、语气自然化策略"
+
+[[workflow.step]]
+order = 4
+title = "降重优化"
+purpose = "进行深度语义改写"
+
+[[workflow.step]]
+order = 5
+title = "学术润色"
+purpose = "提升表达精准性和可读性"
+
+[[workflow.step]]
+order = 6
+title = "质量验证"
+purpose = "对照评估标准确认"
+
+# ---------------------------------------------------------------------------
+# 评估标准
+# ---------------------------------------------------------------------------
+
+[evaluation.quantitative]
+
+[evaluation.quantitative.ai_detection_rate]
+indicator = "AI 生成概率"
+target = "< 20%"
+
+[evaluation.quantitative.sentence_length_std]
+indicator = "句长标准差"
+target = "> 8"
+
+[evaluation.quantitative.vocabulary_diversity_ttr]
+indicator = "词汇丰富度（TTR：不同词 / 总词数）"
+target = "> 0.6"
+
+[evaluation.qualitative]
+
+[evaluation.qualitative.academic_rigor]
+criterion = "学术严谨性"
+description = "论点明确，论证充分"
+
+[evaluation.qualitative.logical_coherence]
+criterion = "逻辑连贯性"
+description = "章节内外逻辑自洽"
+
+[evaluation.qualitative.expression_expertise]
+criterion = "表达专业性"
+description = "术语准确，符合规范"

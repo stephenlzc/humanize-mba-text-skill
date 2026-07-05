@@ -1,0 +1,206 @@
+# MBA Thesis Rewrite Checklist
+#
+# Reference data for `SKILL.md` — the 「MBA论文改写检查清单」section.
+# Currently structured for human/Claude consumption; an evaluator script
+# can iterate these and tick items off programmatically.
+
+version = "1.3.0"
+language = "zh-CN"
+domain = "MBA thesis humanization"
+
+[meta]
+purpose = "MBA 论文改写检查清单。"
+context = "SKILL.md「MBA论文改写检查清单」一节的源数据。"
+note = "每个 item 是布尔断言；可在评估阶段自动 / 人工核对。"
+
+# ---------------------------------------------------------------------------
+# 内容质量检查
+# ---------------------------------------------------------------------------
+
+[[checklist.category]]
+id = "content_quality"
+title = "内容质量检查"
+order = 1
+
+[[checklist.category.items]]
+id = "small_focused_topic"
+text = "选题聚焦，符合「小题大做」原则（核心概念 ≤ 3 个）"
+
+[[checklist.category.items]]
+id = "enterprise_object"
+text = "研究对象为企业组织，有明确职业背景"
+
+[[checklist.category.items]]
+id = "data_source_attributed"
+text = "所有数据已标注来源（公司年报、调研、统计年鉴等）"
+
+[[checklist.category.items]]
+id = "theory_framework"
+text = "运用了 1-2 个理论框架指导分析"
+
+[[checklist.category.items]]
+id = "data_driven_causality"
+text = "问题分析有数据支撑，因果机制清晰"
+
+[[checklist.category.items]]
+id = "actionable_solutions"
+text = "建议具体可操作，考虑资源约束"
+
+[[checklist.category.items]]
+id = "business_management_scope"
+text = "属于工商管理范畴，非纯技术/财务研究"
+
+# ---------------------------------------------------------------------------
+# AI 痕迹检查
+# ---------------------------------------------------------------------------
+
+[[checklist.category]]
+id = "ai_trace"
+title = "AI痕迹检查"
+order = 2
+
+[[checklist.category.items]]
+id = "no_overemphasis_words"
+text = "删除了「重要」「关键」「核心」等过度强调词汇"
+
+[[checklist.category.items]]
+id = "no_macro_narrative"
+text = "删除了「时代」「趋势」「浪潮」等宏观叙事词汇"
+
+[[checklist.category.items]]
+id = "no_surface_analysis"
+text = "删除了「凸显了」「体现了」等表面分析表述"
+
+[[checklist.category.items]]
+id = "no_vague_attribution"
+text = "删除了「专家指出」「研究表明」等模糊归因"
+
+[[checklist.category.items]]
+id = "no_cliche_conclusion"
+text = "删除了「综上所述」「由此可见」等套话"
+
+[[checklist.category.items]]
+id = "no_ai_buzzwords"
+text = "删除了「赋能」「抓手」「闭环」等 AI 词汇"
+
+[[checklist.category.items]]
+id = "few_mechanical_connectors"
+text = "减少了「首先、其次、最后」等机械连接词"
+
+[[checklist.category.items]]
+id = "no_redundant_cn_en_spacing"
+text = "避免中英文之间多余空格"
+
+# ---------------------------------------------------------------------------
+# 结构规范检查
+# ---------------------------------------------------------------------------
+
+[[checklist.category]]
+id = "structure"
+title = "结构规范检查"
+order = 3
+
+[[checklist.category.items]]
+id = "word_count_30k"
+text = "正文字数 ≥ 3 万字"
+
+[[checklist.category.items]]
+id = "chapter_min_4_sections"
+text = "每章至少 4 节（含本章小结）"
+
+[[checklist.category.items]]
+id = "section_substantial"
+text = "每节内容充实，避免一节不足一页"
+
+[[checklist.category.items]]
+id = "section_has_subsections"
+text = "节下有目，层级清晰"
+
+[[checklist.category.items]]
+id = "lit_review_thematic"
+text = "文献综述按主题组织，非按作者罗列"
+
+[[checklist.category.items]]
+id = "conclusion_bullets_2k"
+text = "结论分条列出，2000 字以内，不与摘要雷同"
+
+# ---------------------------------------------------------------------------
+# 格式规范检查
+# ---------------------------------------------------------------------------
+
+[[checklist.category]]
+id = "format"
+title = "格式规范检查"
+order = 4
+
+[[checklist.category.items]]
+id = "fig_tab_labeled"
+text = "图表有编号（图1-1、表1-1）和标题"
+
+[[checklist.category.items]]
+id = "fig_tab_caption"
+text = "图表有文字说明，先文后图"
+
+[[checklist.category.items]]
+id = "fig_tab_clear"
+text = "图表清晰，非拷贝模糊图片"
+
+[[checklist.category.items]]
+id = "superscript_citation"
+text = "引用格式规范，用上标 [1]"
+
+[[checklist.category.items]]
+id = "references_50_min"
+text = "参考文献 ≥ 50 篇，外文 ≥ 1/3，近 5 年 ≥ 1/3"
+
+[[checklist.category.items]]
+id = "journal_60_pct_min"
+text = "期刊论文 ≥ 60%，专著 ≤ 20%"
+
+[[checklist.category.items]]
+id = "no_baidu_baike"
+text = "无百度百科等网络引用"
+
+[[checklist.category.items]]
+id = "section_numbering"
+text = "章节目序号规范"
+
+# ---------------------------------------------------------------------------
+# 整体硬约束（量化阈值）
+# ---------------------------------------------------------------------------
+
+[hard_limits]
+
+[hard_limits.copy_rate]
+target_below = 15
+warn_above = 15
+fail_above = 20
+note = "中国高校 MBA 论文查重率参考阈值"
+
+[hard_limits.main_text_words]
+target_min = 30000
+note = "正文 ≥ 3 万字"
+
+[hard_limits.references_count]
+target_min = 50
+note = "参考文献总数"
+
+[hard_limits.foreign_references_ratio]
+target_min = 0.33
+note = "外文占比"
+
+[hard_limits.recent_5y_ratio]
+target_min = 0.33
+note = "近 5 年占比"
+
+[hard_limits.journal_ratio]
+target_min = 0.60
+note = "期刊论文占比"
+
+[hard_limits.monograph_ratio]
+target_max = 0.20
+note = "专著占比上限"
+
+[hard_limits.conclusion_length]
+target_max = 2000
+note = "结论字数上限"
