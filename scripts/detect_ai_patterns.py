@@ -329,6 +329,24 @@ class AIPatternDetector:
         aggregated_issues = prose_report.issues + chain_report.issues
         modify_plan = [entry.to_dict() for entry in build_modify_plan(aggregated_issues)]
 
+        # Per-sentence high-risk annotations: one row per sentence that fired at
+        # least one rule, with phrase replacements and before/after examples
+        # attached. Pure additive — no overlap with `matches` / `modify_plan`.
+        # Lazy import keeps the analyzers package decoupled from this top-level
+        # CLI entry point.
+        from scripts.analyzers.high_risk_annotator import build_annotations
+
+        high_risk_annotations = [
+            entry.to_dict()
+            for entry in build_annotations(
+                text=text,
+                matches=matches,
+                prose_issues=prose_report.issues,
+                chain_issues=chain_report.issues,
+                rules=self.rules,
+            )
+        ]
+
         report = {
             "summary": {
                 "total_issues": len(matches),
@@ -348,6 +366,7 @@ class AIPatternDetector:
             },
             "issue_types": dict(type_counts.most_common(10)),
             "matches": [asdict(m) for m in matches],
+            "high_risk_annotations": high_risk_annotations,
             "modify_plan": modify_plan,
             "chapter_specific_advice": self._get_chapter_advice(chapter_type),
         }

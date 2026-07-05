@@ -34,6 +34,13 @@ This is an AI writing trace detection and removal tool specifically designed for
 - 📋 **Structured Rewrite Plan**: Reports now expose a `modify_plan` key with per-issue location, rewrite skeleton, recommended replacements, and target word-count range — sorted high → medium → low severity, ready to feed an LLM or a human editor
 - 🎯 **Unified Rule Source**: `AIPatternDetector`, `StatisticalDetector`, and `FeedbackGenerator` all consume the same TOML rule document
 
+### ✨ Version 1.4 New Features (`high_risk_annotations`)
+
+- 🧭 **Per-sentence high-risk annotations**: Reports now expose `high_risk_annotations[]` — one row per sentence that fired any rule; merges regex hits (with line numbers) and structural / chain issues (with `location`) into a single, sentence-anchored view
+- 🔁 **Phrase replacement dictionary (TOML `phrase_replacements`)**: New TOML field supplies phrase-level swaps for 4 high-impact rules — `ai_buzzwords` (赋能→促进/支持, 11 entries), `empty_solution_verbs` (加强…管理→…SOP, 6 entries), `vague_attribution` (有研究表明→具名作者, 6 entries), `unsupported_quantification` (提升X%→with N= / time / source, 6 entries)
+- 📐 **Real rewrite pairs surfaced**: `[[categories.examples]]` is now exposed as `before_after_example` on both `modify_plan` entries and `high_risk_annotations.triggered_rules[]`
+- 🆕 **`scripts/analyzers/high_risk_annotator.py`**: New 350-line module handles sentence segmentation (with char offsets), dual-track bucketing (regex by line_number / issues by location + evidence substring), and severity sorting
+
 ### ✨ Version 1.2 New Features
 
 - 📚 **Three-Dimensional Optimization Strategy**: Added three new strategy documents for AI detection rate reduction, plagiarism rate reduction, and academic polishing
@@ -246,9 +253,72 @@ Cross-paragraph and cross-chapter AI patterns that no per-paragraph rule can cat
     "Sample description: '5-point Likert scale'",
     "When unverifiable: 'this metric needs further verification'",
   ],
-  "target_word_count_range": [60, 140]
+  "target_word_count_range": [60, 140],
+  "before_after_example": {
+    "before": "客户满意度提升20%。",
+    "after": "根据2023年12月客户问卷（N=120），客户满意度从3.8分升至4.5分。"
+  }
 }
 ```
+
+### 7. Per-sentence High-Risk Annotations (v1.4)
+
+`report["high_risk_annotations"]` is a new third array — **one entry per sentence** — that bridges the gap between `matches[]` (hundreds of regex hits, each with only a generic `suggestion` string) and `modify_plan[]` (4 aggregated rows with no line numbers):
+
+```json
+{
+  "sentence_index": 17,
+  "char_offset_start": 1287,
+  "char_offset_end": 1335,
+  "sentence_text": "数字化转型赋能业务创新，形成从生产到服务的完整闭环。",
+  "line_number": 24,
+  "severity": "high",
+  "triggered_rules": [
+    {
+      "rule_id": "ai_buzzwords",
+      "pattern_name": "AI词汇/互联网黑话",
+      "pattern_type": "regex",
+      "evidence": "赋能",
+      "confidence": 1.0,
+      "severity": "high",
+      "phrase_replacements": [
+        "赋能 → 促进/支持",
+        "闭环 → 闭合回路/完整流程",
+        "抓手 → 切入点/措施"
+      ],
+      "before_after_example": {
+        "before": "数字化转型赋能业务创新，形成从生产到服务的完整闭环。",
+        "after": "数字化改造使生产到售后的流程数据打通，订单处理时长从5天缩短至2天。"
+      }
+    }
+  ],
+  "rewrite_template": "把互联网黑话替换为传统管理学术语。",
+  "recommended_replacements": [
+    "赋能 → 促进/支持",
+    "闭环 → 闭合回路/完整流程"
+  ]
+}
+```
+
+**Field reference**:
+
+| Field | Meaning |
+| --- | --- |
+| `sentence_text` | Original sentence as-is |
+| `char_offset_start/end` | Char offsets in the original text (inclusive of terminator) |
+| `line_number` | 1-based line in the original text |
+| `severity` | Worst severity across all rules that fired in this sentence |
+| `triggered_rules[].rule_id` | e.g. `ai_buzzwords`, `empty_solution_verbs`, `chain_three_part_rule` |
+| `triggered_rules[].phrase_replacements` | From TOML `phrase_replacements` — drop-in copy-paste swaps |
+| `triggered_rules[].before_after_example` | From TOML `[[categories.examples]]` — real rewrite pairs |
+| `rewrite_template` | From `rewrite_planner._SKELETONS` — the highest-priority skeleton for this sentence |
+| `recommended_replacements` | Deduped union of every triggered rule's `phrase_replacements` |
+
+**Guarantees**:
+
+- Sorted high → low severity, then `char_offset_start` ascending — ready to feed an LLM humanizer agent sentence-by-sentence
+- Multiple rules hitting the same sentence → one annotation; `triggered_rules[]` aggregates them
+- Existing `matches` / `modify_plan` / `summary` / `metrics` fields **completely unchanged**
 
 ---
 
@@ -576,6 +646,14 @@ Issues and Pull Requests are welcome!
 ---
 
 ## 📝 Changelog
+
+### v1.4.0 (2026-07-05)
+
+- 🧭 **`high_risk_annotations[]` per-sentence aggregation**: New top-level key on `detect_ai_patterns.generate_report` JSON output; merges regex hits and structural / chain issues by sentence; each row carries sentence-level char offsets, original sentence text, all triggered rules, per-rule phrase replacements, and real rewrite pairs
+- 🔁 **TOML `phrase_replacements` field**: Phrase-level replacement mappings for 4 high-impact rules (`ai_buzzwords` / `empty_solution_verbs` / `vague_attribution` / `unsupported_quantification`); hook reserved for a v2 LLM fallback
+- 📐 **`ModifyEntry.before_after_example`**: Additive field on every `modify_plan` row — None or `{before, after}` — sourced from `[[categories.examples]]`
+- 🆕 **`scripts/analyzers/high_risk_annotator.py`**: New module: sentence segmentation (with char offsets) + dual-track bucketing (regex by line_number / issues by location + evidence substring) + severity sorting; decoupled from `detect_ai_patterns.py` via a lazy import
+- ✅ **Backward compatible**: Existing `matches` / `modify_plan` / `summary` / `metrics` field order and types are untouched; `target_word_count_range` remains a 2-element list; all 117 tests pass
 
 ### v1.3.0 (2026-07-05)
 

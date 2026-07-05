@@ -33,6 +33,9 @@ class ModifyEntry:
     - ``rewrite_template`` — short template phrase the humanizer should follow
     - ``recommended_replacements`` — derived from the shared TOML
     - ``target_word_count_range`` — recommended length window
+    - ``before_after_example`` — concrete rewrite pair sourced from
+      ``[[categories.examples]]`` in the shared TOML; ``None`` when the rule
+      has no example attached.
     """
 
     analyzer_id: str
@@ -43,6 +46,7 @@ class ModifyEntry:
     rewrite_template: str
     recommended_replacements: list[str]
     target_word_count_range: tuple[int, int]
+    before_after_example: dict | None = None
 
     def to_dict(self) -> dict:
         data = asdict(self)
@@ -236,6 +240,30 @@ def _lookup_rule_suggestion(analyzer_id: str) -> list[str]:
     return bucket
 
 
+def _lookup_before_after_example(analyzer_id: str) -> dict | None:
+    """Return the first concrete rewrite pair attached to ``analyzer_id``.
+
+    Reads the shared TOML rule document via ``_get_rules()`` and looks up
+    ``[[categories.examples]]`` for the matching category. Returns a plain
+    ``{before, after}`` dict, or ``None`` if the rule has no usable example.
+
+    The first example wins; downstream callers wanting a sentence-matched
+    example should use ``scripts.analyzers.high_risk_annotator`` instead.
+    """
+    rules = _get_rules()
+    for category in rules.get("categories", []):
+        if category.get("id") != analyzer_id:
+            continue
+        for example in category.get("examples") or []:
+            if (
+                isinstance(example, dict)
+                and "before" in example
+                and "after" in example
+            ):
+                return {"before": example["before"], "after": example["after"]}
+    return None
+
+
 def _build_entry(issue: AnalyzerIssue) -> ModifyEntry:
     skeleton = _SKELETONS.get(issue.analyzer_id, _DEFAULT_SKELETON)
     replacements = list(skeleton["replacements"])
@@ -251,6 +279,7 @@ def _build_entry(issue: AnalyzerIssue) -> ModifyEntry:
         rewrite_template=skeleton["template"],
         recommended_replacements=replacements,
         target_word_count_range=tuple(skeleton["word_range"]),
+        before_after_example=_lookup_before_after_example(issue.analyzer_id),
     )
 
 

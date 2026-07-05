@@ -80,6 +80,11 @@ SKILL.md 不再展开具体的识别词表与改写规则——它们以**结构
    - `FusionEngine.detect` 把统计 + 链 + AI 模式三类 detector 合并
    - `StatisticalDetector` 把散文指标 + 链指标并入 features 与 issues 通道
 
+5. **按句高风险聚合** (`scripts/analyzers/high_risk_annotator.py`) 🆕v1.4
+   - 把规则匹配 / 散文 / 链三类 issue 按所在句合并成 `high_risk_annotations[]`
+   - 每条标注带 char 偏移、行号、原文、触发规则的 `phrase_replacements` 与 `before_after_example`
+   - LLM humanizer agent 可逐句消费，无需自己再做一次"哪句有问题"的二次判断
+
 ### 使用方法
 
 ```bash
@@ -102,7 +107,8 @@ python scripts/feedback_generator.py detection_result.json --text input.txt --ap
 
 - `summary.ai_score`：0-100，越高 AI 痕迹越重
 - `matches`：包含规则、散文、链三类问题的统一列表
-- `modify_plan` ⭐：每条 `ModifyEntry` 含 location / evidence / rewrite_template / recommended_replacements / target_word_count_range
+- `modify_plan` ⭐：每条 `ModifyEntry` 含 location / evidence / rewrite_template / recommended_replacements / target_word_count_range / `before_after_example`
+- `high_risk_annotations` 🆕：按句聚合的高风险标注（v1.4），每条 = 一句话 + 该句触发的所有规则 + 短语替换字典 + 真实改写对。LLM humanizer agent 可直接逐句消费
 - `chapter_specific_advice`：根据检测到的章节类型提供的针对性建议
 - `metrics`：包含 `sentence_cv` / `paragraph_cv` / `prose_*` / `chain_*` / `evidence_chain_completeness`
 
@@ -127,8 +133,8 @@ python scripts/feedback_generator.py detection_result.json --text input.txt --ap
 | --- | --- | --- |
 | 主路径 | 检测 + 量化定位 | 改写 + 润色 |
 | 规则粒度 | 正则 / CV / 跨段指纹 | 25 类语义模式（每类带"警惕词 + 改写原则"） |
-| 输出 | `AnalyzerIssue` + `modify_plan` | 表格化识别人性化润色版本 |
-| 强项 | 维度 3-5 的跨段/跨章链检测、量化报告 | 模式词典丰富、对中文学术语感的精确判断 |
+| 输出 | `AnalyzerIssue` + `modify_plan` + `high_risk_annotations[]`（按句聚合，含短语替换字典与真实改写对） | 表格化识别人性化润色版本 |
+| 强项 | 维度 3-5 的跨段/跨章链检测、量化报告、按句精确定位 | 模式词典丰富、对中文学术语感的精确判断 |
 
 `humanizer-academic-zh` 把 AI 模式分成 5 大类共 25 小类。本 Skill 已将其中部分模式并入**渐进式加载的 manifest**——具体落位：
 

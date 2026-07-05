@@ -34,6 +34,13 @@
 - 📋 **構造化書き換えプラン**：レポートに `modify_plan` キーを追加し、位置・書き換え骨格・推奨置換・目標文字数範囲を提示。severity high → medium → low でソートされ、LLMまたは人手編集に直接入力可能
 - 🎯 **統一ルールソース**：`AIPatternDetector` / `StatisticalDetector` / `FeedbackGenerator` が同じTOMLルール文書を共有
 
+### ✨ バージョン1.4の新機能（`high_risk_annotations`）
+
+- 🧭 **文単位の高リスク集約**：レポートに `high_risk_annotations[]` キーを追加。一文ごとに一エントリで、正規表現ヒット（行番号付き）と構造/連鎖issue（location付き）を同じ文に集約
+- 🔁 **フレーズ置換辞書（TOML `phrase_replacements`）**：4つの高頻度ルールに語句レベルの置換マッピングを付与 — `ai_buzzwords`（赋能→促进/支持 等 11件）、`empty_solution_verbs`（加强…管理→…SOP 等 6件）、`vague_attribution`（有研究表明→具名作者 等 6件）、`unsupported_quantification`（提升X%→N=・時間・根拠付き 等 6件）
+- 📐 **実リライト例の公開**：`[[categories.examples]]` が `modify_plan` および `high_risk_annotations.triggered_rules[]` の `before_after_example` として公開される
+- 🆕 **`scripts/analyzers/high_risk_annotator.py`**：350行の新規モジュール。文セグメンテーション（文字オフセット付き）+ 二系統バケッティング（正規表現は行番号 / issue は location + evidence 部分文字列）+ 重大度ソートを担当
+
 ### ✨ バージョン1.2の新機能
 
 - 📚 **戦略文書の追加**：3つの最適化戦略ファイルを新規追加
@@ -249,9 +256,72 @@ AI痕跡を除去：[テキストを貼り付け]
     "サンプル説明：「5段階リカート尺度」",
     "検証不能時：「本指標は別途検証が必要」",
   ],
-  "target_word_count_range": [60, 140]
+  "target_word_count_range": [60, 140],
+  "before_after_example": {
+    "before": "客户满意度提升20%。",
+    "after": "根据2023年12月客户问卷（N=120），客户满意度从3.8分升至4.5分。"
+  }
 }
 ```
+
+### 7. 文単位の高リスク集約（v1.4）
+
+`report["high_risk_annotations"]` は新規追加の第三配列 — **一文一エントリ** — で、`matches[]`（数百件の正規表現ヒットだが各々は汎用 `suggestion` 文字列のみ）と `modify_plan[]`（4行の集約で具体行番号なし）の間の情報断層を埋める：
+
+```json
+{
+  "sentence_index": 17,
+  "char_offset_start": 1287,
+  "char_offset_end": 1335,
+  "sentence_text": "数字化转型赋能业务创新，形成从生产到服务的完整闭环。",
+  "line_number": 24,
+  "severity": "high",
+  "triggered_rules": [
+    {
+      "rule_id": "ai_buzzwords",
+      "pattern_name": "AI词汇/互联网黑话",
+      "pattern_type": "regex",
+      "evidence": "赋能",
+      "confidence": 1.0,
+      "severity": "high",
+      "phrase_replacements": [
+        "赋能 → 促进/支持",
+        "闭环 → 闭合回路/完整流程",
+        "抓手 → 切入点/措施"
+      ],
+      "before_after_example": {
+        "before": "数字化转型赋能业务创新，形成从生产到服务的完整闭环。",
+        "after": "数字化改造使生产到售后的流程数据打通，订单处理时长从5天缩短至2天。"
+      }
+    }
+  ],
+  "rewrite_template": "把互联网黑话替换为传统管理学术语。",
+  "recommended_replacements": [
+    "赋能 → 促进/支持",
+    "闭环 → 闭合回路/完整流程"
+  ]
+}
+```
+
+**フィールドリファレンス**：
+
+| フィールド | 意味 |
+| --- | --- |
+| `sentence_text` | 元の文そのまま |
+| `char_offset_start/end` | 元テキスト内の文字オフセット（終了記号を含む） |
+| `line_number` | 元テキストの1始まりの行番号 |
+| `severity` | この文で発火した全ルール中の最高重大度 |
+| `triggered_rules[].rule_id` | 例：`ai_buzzwords`、`empty_solution_verbs`、`chain_three_part_rule` |
+| `triggered_rules[].phrase_replacements` | TOML `phrase_replacements` から。コピー＆ペースト可能な語句置換 |
+| `triggered_rules[].before_after_example` | TOML `[[categories.examples]]` から。実リライトペア |
+| `rewrite_template` | `rewrite_planner._SKELETONS` から。この文の最高優先度ルールの骨格 |
+| `recommended_replacements` | 起動した全ルールの `phrase_replacements` の重複排除合併 |
+
+**保証**：
+
+- severity 高→低 → `char_offset_start` 昇順でソート — LLM humanizer agent に文単位で投入可能
+- 同じ文に複数ルール → 一つの annotation、`triggered_rules[]` に集約
+- 既存の `matches` / `modify_plan` / `summary` / `metrics` フィールドは**完全に不変**
 
 ---
 
@@ -574,6 +644,14 @@ IssueとPull Requestの提出を歓迎します！
 ---
 
 ## 📝 更新履歴
+
+### v1.4.0 (2026-07-05)
+
+- 🧭 **`high_risk_annotations[]` 文単位集約**：`detect_ai_patterns.generate_report` のJSON出力に新規トップレベルキー。正規表現ヒットと構造/連鎖issueを文単位でマージ。各行は文レベルの文字オフセット・元文・起動した全ルール・ルール毎のフレーズ置換・実リライトペアを保持
+- 🔁 **TOML `phrase_replacements` フィールド**：4つの高頻度ルールに語句レベルの置換マッピングを付与（`ai_buzzwords` / `empty_solution_verbs` / `vague_attribution` / `unsupported_quantification`）。v2 LLMフォールバック用フックも予約済み
+- 📐 **`ModifyEntry.before_after_example`**：`modify_plan` 全行への additive フィールド — Noneまたは`{before, after}` — `[[categories.examples]]` をソースとする
+- 🆕 **`scripts/analyzers/high_risk_annotator.py`**：新規モジュール。文セグメンテーション（文字オフセット付き）+ 二系統バケッティング（正規表現は行番号 / issue は location + evidence 部分文字列）+ 重大度ソート。`detect_ai_patterns.py` とは lazy import で疎結合
+- ✅ **後方互換**：既存 `matches` / `modify_plan` / `summary` / `metrics` のフィールド順・型は不変。`target_word_count_range` は2要素 list を維持。117テスト全パス
 
 ### v1.3.0 (2026-07-05)
 

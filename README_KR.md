@@ -34,6 +34,13 @@
 - 📋 **구조화된 재작성 플랜**: 리포트에 `modify_plan` 키 추가 — 각 문제에 위치, 재작성 골격, 추천 치환, 목표 글자수 범위 제공. severity high → medium → low 순으로 정렬되어 LLM 또는 인적 편집에 직접 사용 가능
 - 🎯 **통합 규칙 소스**: `AIPatternDetector` / `StatisticalDetector` / `FeedbackGenerator`가 동일한 TOML 규칙 문서를 공유
 
+### ✨ 버전 1.4 새로운 기능 (`high_risk_annotations`)
+
+- 🧭 **문장 단위 고위험 통합**: 리포트에 `high_risk_annotations[]` 키 추가. 한 문장당 한 항목으로 정규식 히트(행 번호 포함)와 구조/체인 이슈(location 포함)를 같은 문장에 통합
+- 🔁 **구문 치환 사전(TOML `phrase_replacements`)**: 4개 고빈도 규칙에 구문 단위 치환 매핑 제공 — `ai_buzzwords`(赋能→促进/支持 등 11개), `empty_solution_verbs`(加强…管理→…SOP 등 6개), `vague_attribution`(有研究表明→구체적 저자 등 6개), `unsupported_quantification`(提升X%→N=, 시간, 출처 포함 등 6개)
+- 📐 **실제 재작성 쌍 노출**: `[[categories.examples]]` 가 `modify_plan` 및 `high_risk_annotations.triggered_rules[]` 의 `before_after_example` 로 노출됨
+- 🆕 **`scripts/analyzers/high_risk_annotator.py`**: 350줄 신규 모듈. 문장 세분화(문자 오프셋 포함) + 이중 트랙 버킷팅(정규식은 행 번호 / 이슈는 location + evidence 부분 문자열) + 심각도 정렬 담당
+
 ### ✨ 버전 1.2 새로운 기능
 
 - 📚 **삼차원 최적화 전략 문서화**: AI 감지율 감소 / 표절율 감소 / 학술 윤문 향상을 위한 3개 전략 문서 신규 추가
@@ -235,9 +242,72 @@ AI 흔적 제거: [텍스트 붙여넣기]
     "표본 설명: 「5점 리커트 척도」",
     "검증 불가 시: 「본 지표는 추가 검증이 필요」",
   ],
-  "target_word_count_range": [60, 140]
+  "target_word_count_range": [60, 140],
+  "before_after_example": {
+    "before": "客户满意度提升20%。",
+    "after": "根据2023年12月客户问卷（N=120），客户满意度从3.8分升至4.5分。"
+  }
 }
 ```
+
+### 7. 문장 단위 고위험 통합 (v1.4)
+
+`report["high_risk_annotations"]` 는 새로 추가된 세 번째 배열 — **한 문장당 한 항목** — 으로, `matches[]` (수백 건의 정규식 히트, 각 항목은 일반적인 `suggestion` 문자열만 보유) 와 `modify_plan[]` (4건의 집계, 행 번호 없음) 사이의 정보 단절을 메꿔 줍니다:
+
+```json
+{
+  "sentence_index": 17,
+  "char_offset_start": 1287,
+  "char_offset_end": 1335,
+  "sentence_text": "数字化转型赋能业务创新，形成从生产到服务的完整闭环。",
+  "line_number": 24,
+  "severity": "high",
+  "triggered_rules": [
+    {
+      "rule_id": "ai_buzzwords",
+      "pattern_name": "AI词汇/互联网黑话",
+      "pattern_type": "regex",
+      "evidence": "赋能",
+      "confidence": 1.0,
+      "severity": "high",
+      "phrase_replacements": [
+        "赋能 → 促进/支持",
+        "闭环 → 闭合回路/完整流程",
+        "抓手 → 切入点/措施"
+      ],
+      "before_after_example": {
+        "before": "数字化转型赋能业务创新，形成从生产到服务的完整闭环。",
+        "after": "数字化改造使生产到售后的流程数据打通，订单处理时长从5天缩短至2天。"
+      }
+    }
+  ],
+  "rewrite_template": "把互联网黑话替换为传统管理学术语。",
+  "recommended_replacements": [
+    "赋能 → 促进/支持",
+    "闭环 → 闭合回路/完整流程"
+  ]
+}
+```
+
+**필드 참조**:
+
+| 필드 | 의미 |
+| --- | --- |
+| `sentence_text` | 원본 문장 그대로 |
+| `char_offset_start/end` | 원본 텍스트 내 문자 오프셋 (종결 부호 포함) |
+| `line_number` | 원본 텍스트의 1-based 행 번호 |
+| `severity` | 이 문장에서 발화한 모든 규칙 중 최고 심각도 |
+| `triggered_rules[].rule_id` | 예: `ai_buzzwords`, `empty_solution_verbs`, `chain_three_part_rule` |
+| `triggered_rules[].phrase_replacements` | TOML `phrase_replacements` 에서. 복사·붙여넣기 가능한 구문 치환 |
+| `triggered_rules[].before_after_example` | TOML `[[categories.examples]]` 에서. 실제 재작성 쌍 |
+| `rewrite_template` | `rewrite_planner._SKELETONS` 에서. 이 문장의 최고 우선순위 규칙 골격 |
+| `recommended_replacements` | 발화한 모든 규칙의 `phrase_replacements` 의 중복 제거 합집합 |
+
+**보장**:
+
+- severity 고→저 → `char_offset_start` 오름차순 정렬 — LLM humanizer agent 에 문장 단위로 직접 투입 가능
+- 같은 문장에 다수 규칙 → 하나의 annotation, `triggered_rules[]` 에 집계
+- 기존 `matches` / `modify_plan` / `summary` / `metrics` 필드는 **완전히 불변**
 
 ---
 
@@ -560,6 +630,14 @@ Issue와 Pull Request를 환영합니다!
 ---
 
 ## 📝 변경 로그
+
+### v1.4.0 (2026-07-05)
+
+- 🧭 **`high_risk_annotations[]` 문장 단위 통합**: `detect_ai_patterns.generate_report` JSON 출력에 최상위 키 추가. 정규식 히트와 구조/체인 이슈를 문장 단위로 병합. 각 행은 문장 단위 문자 오프셋, 원문, 발화한 모든 규칙, 규칙별 구문 치환, 실제 재작성 쌍 보유
+- 🔁 **TOML `phrase_replacements` 필드**: 4개 고빈도 규칙에 구문 단위 치환 매핑 추가 (`ai_buzzwords` / `empty_solution_verbs` / `vague_attribution` / `unsupported_quantification`). v2 LLM 폴백용 훅도 예약됨
+- 📐 **`ModifyEntry.before_after_example`**: 모든 `modify_plan` 행에 추가되는 additive 필드 — None 또는 `{before, after}` — `[[categories.examples]]` 를 소스로 함
+- 🆕 **`scripts/analyzers/high_risk_annotator.py`**: 신규 모듈. 문장 세분화(문자 오프셋 포함) + 이중 트랙 버킷팅(정규식은 행 번호 / 이슈는 location + evidence 부분 문자열) + 심각도 정렬. `detect_ai_patterns.py` 와 lazy import 로 디커플링
+- ✅ **하위 호환**: 기존 `matches` / `modify_plan` / `summary` / `metrics` 의 필드 순서·타입 불변. `target_word_count_range` 는 2 요소 list 유지. 117개 테스트 모두 통과
 
 ### v1.3.0 (2026-07-05)
 

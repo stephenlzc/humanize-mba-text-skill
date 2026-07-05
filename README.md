@@ -34,6 +34,13 @@
 - 📋 **结构化改写计划**：报告新增 `modify_plan` 键，每个问题提供位置、改写骨架、推荐替换句式、目标字数区间；按 severity high → medium → low 排序，可直接对接 LLM 或人工改写
 - 🎯 **三方统一接入**：`AIPatternDetector`、`StatisticalDetector`、`FeedbackGenerator` 共用同一份 TOML 规则，新增类别一处生效
 
+### ✨ 版本 1.4 新特性（high_risk_annotations）
+
+- 🧭 **按句聚合的高风险标注**：报告新增 `high_risk_annotations[]` 键，每条标注 = 一句话 + 该句触发的所有规则；正则命中（带行号）和结构/链 issue（带 location）合并到同一句
+- 🔁 **替换短语字典（TOML `phrase_replacements`）**：为 4 类高频规则提供"短语→学术词"映射：`ai_buzzwords`（赋能→促进/支持 等 11 条）/ `empty_solution_verbs`（加强…管理→…SOP 等 6 条）/ `vague_attribution`（有研究表明→具名作者 等 6 条）/ `unsupported_quantification`（提升X%→含 N=、时间、来源 等 6 条）
+- 📐 **真实改写对（TOML `[[categories.examples]]`）**：复用既有 `[[categories.examples]]` 字段，在 `modify_plan` 与 `high_risk_annotations` 中暴露为 `before_after_example`，无需新增数据源
+- 🆕 **`scripts/analyzers/high_risk_annotator.py`**：新增 350 行模块负责句子切分（带 char 偏移）+ 双轨桶聚合（regex 按行号 / issue 按 location + evidence 子串）+ 严重度排序
+
 ### ✨ 版本 1.2 新特性
 
 - 📚 **三维优化策略**：新增 AI 检测率降低 / 查重率降低 / 学术润色三份策略文档
@@ -235,9 +242,72 @@ git clone https://github.com/stephenlzc/humanize-mba-text-skill.git
     "样本说明：'问卷采用 5 分制李克特量表'",
     "无法核实时标注：'该指标需要进一步核实'"
   ],
-  "target_word_count_range": [60, 140]
+  "target_word_count_range": [60, 140],
+  "before_after_example": {
+    "before": "客户满意度提升20%。",
+    "after": "根据2023年12月客户问卷（N=120），客户满意度从3.8分升至4.5分。"
+  }
 }
 ```
+
+### 7. 按句聚合的高风险标注（v1.4）
+
+`report["high_risk_annotations"]` 是新增的第三数组——**一句话一条**，把正则命中和结构/链 issue 合并到同一个句子，避免 `matches[]`（540 条但每条只有笼统建议）与 `modify_plan[]`（4 条聚合但无具体行号）的信息断层。
+
+```json
+{
+  "sentence_index": 17,
+  "char_offset_start": 1287,
+  "char_offset_end": 1335,
+  "sentence_text": "数字化转型赋能业务创新，形成从生产到服务的完整闭环。",
+  "line_number": 24,
+  "severity": "high",
+  "triggered_rules": [
+    {
+      "rule_id": "ai_buzzwords",
+      "pattern_name": "AI词汇/互联网黑话",
+      "pattern_type": "regex",
+      "evidence": "赋能",
+      "confidence": 1.0,
+      "severity": "high",
+      "phrase_replacements": [
+        "赋能 → 促进/支持",
+        "闭环 → 闭合回路/完整流程",
+        "抓手 → 切入点/措施"
+      ],
+      "before_after_example": {
+        "before": "数字化转型赋能业务创新，形成从生产到服务的完整闭环。",
+        "after": "数字化改造使生产到售后的流程数据打通，订单处理时长从5天缩短至2天。"
+      }
+    }
+  ],
+  "rewrite_template": "把互联网黑话替换为传统管理学术语。",
+  "recommended_replacements": [
+    "赋能 → 促进/支持",
+    "闭环 → 闭合回路/完整流程"
+  ]
+}
+```
+
+**字段含义**：
+
+| 字段 | 说明 |
+| --- | --- |
+| `sentence_text` | 原始句子原文 |
+| `char_offset_start/end` | 在原文中的字符偏移（含终止符） |
+| `line_number` | 原文 1-based 行号 |
+| `severity` | 该句所有规则中的最高严重度 |
+| `triggered_rules[].rule_id` | `ai_buzzwords` / `empty_solution_verbs` / `chain_three_part_rule` 等 |
+| `triggered_rules[].phrase_replacements` | 来自 TOML `phrase_replacements`：可直接复制的短语替换（如 "赋能 → 促进/支持"） |
+| `triggered_rules[].before_after_example` | 来自 TOML `[[categories.examples]]`：真实改写对 |
+| `rewrite_template` | 来自 `rewrite_planner._SKELETONS`：该句最高优先级规则的改写骨架 |
+| `recommended_replacements` | 同句所有规则替换短语的去重并集 |
+
+**保证**：
+
+- 数组按 `severity` 高→低、再按 `char_offset_start` 升序排序，可直接对接 LLM humanizer agent 逐句处理
+- 同句多条规则 → 一条 annotation，`triggered_rules[]` 聚合
+- 现有 `matches` / `modify_plan` / `summary` / `metrics` 字段**完全不变**
 
 ---
 
@@ -560,6 +630,14 @@ done
 ---
 
 ## 📝 更新日志
+
+### v1.4.0 (2026-07-05)
+
+- 🧭 **`high_risk_annotations[]` 按句聚合**：`detect_ai_patterns.generate_report` 返回的 JSON 新增顶层键，把正则命中和结构/链 issue 按句合并；每条标注同时具备句级字符偏移、原文、触发的全部规则、每条规则的短语替换字典与真实改写对
+- 🔁 **TOML `phrase_replacements` 字段**：为 4 类高频规则提供短语级替换映射（`ai_buzzwords` / `empty_solution_verbs` / `vague_attribution` / `unsupported_quantification`）；接口预留 LLM 兜底扩展点
+- 📐 **`ModifyEntry.before_after_example`**：`modify_plan` 现有 schema 增量增加 `before_after_example` 字段（None 或 `{before, after}`），直接复用 `[[categories.examples]]` 中的真实改写对
+- 🆕 **`scripts/analyzers/high_risk_annotator.py`**：新模块负责句子切分（带字符偏移）+ 双轨桶聚合（regex 按行号 / issue 按 location + evidence 子串）+ 严重度排序；与 `detect_ai_patterns.py` 通过懒导入解耦
+- ✅ **向后兼容**：现有 `matches` / `modify_plan` / `summary` / `metrics` 字段顺序与类型完全不变；`target_word_count_range` 仍为 2 元素 list；117 个测试全部通过
 
 ### v1.3.0 (2026-07-05)
 
