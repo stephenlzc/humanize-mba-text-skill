@@ -4,7 +4,7 @@
   <img src="https://img.shields.io/badge/Python-3.7+-blue.svg" alt="Python 3.7+">
   <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT">
   <img src="https://img.shields.io/badge/Claude-Skill-orange.svg" alt="Claude Skill">
-  <img src="https://img.shields.io/badge/Version-1.3-brightgreen.svg" alt="Version: 1.3">
+  <img src="https://img.shields.io/badge/Version-1.5-brightgreen.svg" alt="Version: 1.5">
   <img src="https://img.shields.io/badge/Kimi-CLI-blue.svg" alt="Kimi CLI">
   <a href="README.md"><img src="https://img.shields.io/badge/中文-🇨🇳-inactive.svg" alt="中文"></a>
   <img src="https://img.shields.io/badge/English-🇺🇸-red.svg" alt="English">
@@ -26,28 +26,18 @@
 
 This is an AI writing trace detection and removal tool specifically designed for **Chinese MBA theses**. Based on the academic norms and practical requirements of MBA theses, it uses multi-dimensional detection methods to identify AI-generated features in text and provides specific modification suggestions to help you rewrite AI-generated text into natural, humanized academic writing style.
 
-### ✨ Version 1.3 New Features
+### ✨ Version 1.5 New Features (Paragraph-Level Sentence CV + Report Readability)
 
-- 🔬 **Externalized Rules**: All AI-detection rules moved to external TOML documents, split across 7 categories (`structure / rhythm_quality / formatting / content / evidence / language / chapter-categories`); rules decoupled from code, no code change to extend
-- 📊 **Prose-Structure Analyzers (5)**: sentence-length CV / paragraph-length CV / paragraph-edge template repeat / cross-paragraph structure uniformity / chapter template repeat; each emits severity + confidence + location + evidence + suggestion
-- 🔗 **Semantic-Chain Analyzers (10)**: three-part template / author listing / method-name stacking / abstract template / conclusion echo / vague problem statement / unsupported quantification / macro-narrative window / evidence-chain completeness / cross-section problem trace — patterns that emerge *across* paragraphs and chapters
-- 📋 **Structured Rewrite Plan**: Reports now expose a `modify_plan` key with per-issue location, rewrite skeleton, recommended replacements, and target word-count range — sorted high → medium → low severity, ready to feed an LLM or a human editor
-- 🎯 **Unified Rule Source**: `AIPatternDetector`, `StatisticalDetector`, and `FeedbackGenerator` all consume the same TOML rule document
+- 📐 **Paragraph-level sentence-length CV**: Adapts the `AI_artifact_detection` method, using the coefficient of variation (CV) of sentence length within a paragraph as the core AI signal. Chinese is measured in CJK characters, English in words
+- 📊 **Chinese CV report**: Detection Markdown reports now automatically append a five-section CV report — Overall Statistics / CV Distribution / Uniform Paragraph Details / Section Summary / Sentence-Length Histogram
+- 🔁 **Before/After comparison**: New `scripts/detect_compare.py` CLI takes before/after texts and outputs a Chinese Before/After comparison Markdown
+- 🌐 **Optional English detection mode**: `sentence_length.analyze(text, language="en")` supports sentence-length CV detection for English prose
+- 🎯 **Content snippets with context**: The detailed issue list now shows ~20 characters before and after each match for quick location
+- 📝 **Full modification suggestions**: Suggestions are no longer truncated; all guidance is displayed in full
+- 📋 **Uniform paragraphs as full table**: All paragraphs with CV < 0.30 are listed in a table, no longer capped at 20
+- ⏰ **Real generation timestamp**: Report footer now shows the actual generation time (YYYY-MM-DD HH:MM:SS)
 
-### ✨ Version 1.4 New Features (`high_risk_annotations`)
-
-- 🧭 **Per-sentence high-risk annotations**: Reports now expose `high_risk_annotations[]` — one row per sentence that fired any rule; merges regex hits (with line numbers) and structural / chain issues (with `location`) into a single, sentence-anchored view
-- 🔁 **Phrase replacement dictionary (TOML `phrase_replacements`)**: New TOML field supplies phrase-level swaps for 4 high-impact rules — `ai_buzzwords` (赋能→促进/支持, 11 entries), `empty_solution_verbs` (加强…管理→…SOP, 6 entries), `vague_attribution` (有研究表明→具名作者, 6 entries), `unsupported_quantification` (提升X%→with N= / time / source, 6 entries)
-- 📐 **Real rewrite pairs surfaced**: `[[categories.examples]]` is now exposed as `before_after_example` on both `modify_plan` entries and `high_risk_annotations.triggered_rules[]`
-- 🆕 **`scripts/analyzers/high_risk_annotator.py`**: New 350-line module handles sentence segmentation (with char offsets), dual-track bucketing (regex by line_number / issues by location + evidence substring), and severity sorting
-
-### ✨ Version 1.2 New Features
-
-- 📚 **Three-Dimensional Optimization Strategy**: Added three new strategy documents for AI detection rate reduction, plagiarism rate reduction, and academic polishing
-- 🔍 **Enhanced Detection Capability**: Optimized rule matching, statistical analysis, and language feature detection
-- 🎓 **Refined MBA Standards**: Further refined MBA thesis core principles and chapter-specific writing guidelines
-- 📝 **Improved Format Standards**: Expanded format standard documentation covering more edge cases
-- 🌐 **Multi-language READMEs**: Added English, Japanese, and Korean versions
+> Older versions (1.4 / 1.3 / 1.2) are archived in [`FEATURE.md`](FEATURE.md).
 
 ### Core Features
 

@@ -4,7 +4,7 @@
   <img src="https://img.shields.io/badge/Python-3.7+-blue.svg" alt="Python 3.7+">
   <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT">
   <img src="https://img.shields.io/badge/Claude-Skill-orange.svg" alt="Claude Skill">
-  <img src="https://img.shields.io/badge/Version-1.3-brightgreen.svg" alt="Version: 1.3">
+  <img src="https://img.shields.io/badge/Version-1.5-brightgreen.svg" alt="Version: 1.5">
   <img src="https://img.shields.io/badge/Kimi-CLI-blue.svg" alt="Kimi CLI">
   <img src="https://img.shields.io/badge/中文-🇨🇳-red.svg" alt="中文">
   <a href="README_EN.md"><img src="https://img.shields.io/badge/English-🇺🇸-inactive.svg" alt="English"></a>
@@ -26,33 +26,24 @@
 
 这是一个专门为**中国 MBA 毕业论文**设计的 AI 写作痕迹检测与去除工具。基于 MBA 论文的学术规范和实践要求，通过多维度检测方法识别文本中的 AI 生成特征，并提供具体的修改建议，帮助你将 AI 生成的文本改写为自然、人类化的学术写作风格。
 
-### ✨ 版本 1.3 新特性
+### ✨ 版本 1.5 新特性（段落级句长 CV + 报告可读性升级）
 
-- 🔬 **规则外置**：所有 AI 检测规则改用外部 TOML 文件维护，按 `structure / rhythm_quality / formatting / content / evidence / language / chapter-categories` 七大类拆分；分析与代码解耦，新增规则无需改动代码
-- 📊 **散文结构分析器（5 个）**：句长 CV / 段长 CV / 段首末模板重复 / 段间结构均一化 / 章节章法模板重复；每个分析器输出 severity + confidence + location + evidence + suggestion 五个字段
-- 🔗 **语义链分析器（10 个）**：三段式 / 作者罗列 / 方法堆叠 / 摘要模板 / 结论回声 / 笼统问题 / 无来源量化 / 宏观叙事 / 证据链完整度 / 问题-对策跨章节追踪；跨段、跨章节模型，捕捉段内看不到的成链模板
-- 📋 **结构化改写计划**：报告新增 `modify_plan` 键，每个问题提供位置、改写骨架、推荐替换句式、目标字数区间；按 severity high → medium → low 排序，可直接对接 LLM 或人工改写
-- 🎯 **三方统一接入**：`AIPatternDetector`、`StatisticalDetector`、`FeedbackGenerator` 共用同一份 TOML 规则，新增类别一处生效
+- 📐 **段落级句长 CV 分析**：参考 `AI_artifact_detection` 方法，以段落内句子长度的变异系数（CV）作为核心 AI 信号，中文按 CJK 字符、英文按单词计数
+- 📊 **中文 CV 报告**：检测 Markdown 报告末尾自动附加五段式 CV 报告——整体统计 / CV 分布 / Uniform 段落详情 / 章节汇总 / 句长分布
+- 🔁 **改写前后对比**：新增 `scripts/detect_compare.py`，输入改写前、改写后两个文本，输出中文 Before/After 对比 Markdown
+- 🌐 **可选英文检测模式**：`sentence_length.analyze(text, language="en")` 支持英文散文的句长 CV 检测
+- 🎯 **内容片段带上下文**：详细问题列表中的内容片段现在显示匹配处前后约 20 字，便于快速定位
+- 📝 **修改建议完整显示**：不再截断修改建议，完整输出所有提示
+- 📋 **Uniform 段落完整表格**：CV < 0.30 的段落全部以表格列出，不再限制 20 条
+- ⏰ **真实生成时间**：报告末尾显示实际生成时间（YYYY-MM-DD HH:MM:SS）
 
-### ✨ 版本 1.4 新特性（high_risk_annotations）
-
-- 🧭 **按句聚合的高风险标注**：报告新增 `high_risk_annotations[]` 键，每条标注 = 一句话 + 该句触发的所有规则；正则命中（带行号）和结构/链 issue（带 location）合并到同一句
-- 🔁 **替换短语字典（TOML `phrase_replacements`）**：为 4 类高频规则提供"短语→学术词"映射：`ai_buzzwords`（赋能→促进/支持 等 11 条）/ `empty_solution_verbs`（加强…管理→…SOP 等 6 条）/ `vague_attribution`（有研究表明→具名作者 等 6 条）/ `unsupported_quantification`（提升X%→含 N=、时间、来源 等 6 条）
-- 📐 **真实改写对（TOML `[[categories.examples]]`）**：复用既有 `[[categories.examples]]` 字段，在 `modify_plan` 与 `high_risk_annotations` 中暴露为 `before_after_example`，无需新增数据源
-- 🆕 **`scripts/analyzers/high_risk_annotator.py`**：新增 350 行模块负责句子切分（带 char 偏移）+ 双轨桶聚合（regex 按行号 / issue 按 location + evidence 子串）+ 严重度排序
-
-### ✨ 版本 1.2 新特性
-
-- 📚 **三维优化策略**：新增 AI 检测率降低 / 查重率降低 / 学术润色三份策略文档
-- 🔍 **增强检测能力**：规则匹配、统计分析、语言特征三层全面调优
-- 🎓 **细化 MBA 规范**：MBA 论文核心原则和分章节写作指南进一步细化
-- 📝 **完善格式规范**：扩展格式标准文档的边界场景覆盖
-- 🎯 **强化实践导向**：更强调数据支撑、理论应用和具体案例分析
-- 🌐 **多语言 README**：补齐英文 / 日文 / 韩文版本
+> 历史版本（1.4 / 1.3 / 1.2）特性已归档至 [`FEATURE.md`](FEATURE.md)。
 
 ### 核心功能
 
 - ✅ **多层级 AI 检测**：从规则匹配（regex）→ 散文统计（5 维 CV/指纹）→ 语义链（10 维跨段/跨章）三层叠加
+- ✅ **段落级句长 CV 报告**：基于 `AI_artifact_detection` 方法，输出 Uniform 段落、CV 分布、章节汇总、句长分布
+- ✅ **改写前后对比**：`scripts/detect_compare.py` 一键生成 Before/After 中文对比报告
 - ✅ **章节特定规则**：针对绪论、理论、分析、建议、结论 5 个章节的优化策略
 - ✅ **MBA 论文规范**：符合中国高校 MBA 论文字数、结构、格式要求
 - ✅ **结构化改写计划**：每个 issue 都附 location + skeleton + recommended replacements + 目标字数
@@ -144,6 +135,18 @@ python scripts/feedback_generator.py detection_result.json --text your_text.txt 
 # 自动修复空格等简单问题
 python scripts/feedback_generator.py detection_result.json --text your_text.txt --apply
 ```
+
+#### 5. 改写前后对比（CV 报告）
+
+```bash
+# 对比改写前后的句长 CV 变化，输出中文 Markdown
+python scripts/detect_compare.py before.txt after.txt --output compare.md
+
+# 同时输出结构化 JSON
+python scripts/detect_compare.py before.txt after.txt --output compare.md --json compare.json
+```
+
+示例文件见 `examples/cv_before.txt`、`examples/cv_after.txt`、`examples/cv_compare.md`。
 
 ### 作为 Claude Skill 使用
 

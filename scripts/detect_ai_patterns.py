@@ -18,6 +18,13 @@ import math
 from dataclasses import dataclass, asdict
 from typing import List, Dict
 from collections import Counter
+from pathlib import Path
+
+# Allow running this script directly from the project root while still importing
+# the `scripts` namespace package used throughout the codebase.
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
 
 try:
     from rule_loader import iter_regex_categories, load_rules  # noqa: F401
@@ -27,6 +34,7 @@ try:
         build_modify_plan,
     )
     from analyzers._types import AnalyzerIssue  # noqa: F401
+    from analyzers.cv_report import render_markdown as render_cv_report
 except ImportError:  # imported as package during tests
     from scripts.rule_loader import iter_regex_categories, load_rules  # noqa: F401
     from scripts.analyzers import (
@@ -35,6 +43,7 @@ except ImportError:  # imported as package during tests
         build_modify_plan,
     )
     from scripts.analyzers._types import AnalyzerIssue
+    from scripts.analyzers.cv_report import render_markdown as render_cv_report
 
 
 # Title shown in the matches table / feedback report for issues produced by
@@ -58,6 +67,7 @@ def _prose_issue_to_match(issue):  # type: ignore[no-untyped-def]
         content=issue.evidence[:60],
         suggestion=issue.suggestion,
         severity=issue.severity,
+        context=issue.evidence[:100],
     )
 
 
@@ -75,6 +85,7 @@ def _chain_issue_to_match(issue):  # type: ignore[no-untyped-def]
         content=issue.evidence[:60],
         suggestion=issue.suggestion,
         severity=issue.severity,
+        context=issue.evidence[:100],
     )
 
 
@@ -93,6 +104,7 @@ class PatternMatch:
     content: str
     suggestion: str
     severity: str  # high, medium, low
+    context: str = ""  # 匹配处前后 20 字左右的文本片段，用于定位
 
 
 # Now that PatternMatch exists, bind the factory used by _prose_issue_to_match.
@@ -156,6 +168,16 @@ class AIPatternDetector:
             return f"删除空格：{match.group(1)}{match.group(2)}"
         return pattern_info["suggestion"]
 
+    @staticmethod
+    def _match_context(line: str, match) -> str:
+        """Extract ~20 characters before and after the match for quick location."""
+        start = max(0, match.start() - 20)
+        end = min(len(line), match.end() + 20)
+        ctx = line[start:end]
+        # Strip surrounding whitespace and collapse internal whitespace for readability.
+        ctx = " ".join(ctx.split())
+        return ctx
+
     def detect_patterns(self, text: str) -> List[PatternMatch]:
         """检测所有 AI 写作特征。
 
@@ -185,6 +207,7 @@ class AIPatternDetector:
                                 content=match.group(0)[:50],
                                 suggestion=pattern_info["suggestion"],
                                 severity=pattern_info["severity"],
+                                context=self._match_context(line, match),
                             )
                         )
             else:
@@ -205,6 +228,7 @@ class AIPatternDetector:
                                     content=match.group(0)[:50],
                                     suggestion=self._match_suggestion(pattern_id, pattern_info, match),
                                     severity=pattern_info["severity"],
+                                    context=self._match_context(line, match),
                                 )
                             )
 
@@ -347,6 +371,14 @@ class AIPatternDetector:
             )
         ]
 
+        # Sentence-length CV report: rich paragraph-level statistics rendered as
+        # a Chinese Markdown section. Kept separate from the legacy report so
+        # callers can ignore it if they only need the classic summary.
+        cv_report_data = prose_metrics.get("uniform_paragraphs") is not None
+        cv_report_markdown = ""
+        if cv_report_data:
+            cv_report_markdown = render_cv_report(prose_metrics, include_footer=False)
+
         report = {
             "summary": {
                 "total_issues": len(matches),
@@ -369,6 +401,8 @@ class AIPatternDetector:
             "high_risk_annotations": high_risk_annotations,
             "modify_plan": modify_plan,
             "chapter_specific_advice": self._get_chapter_advice(chapter_type),
+            "cv_report_data": cv_report_data,
+            "cv_report_markdown": cv_report_markdown,
         }
 
         return report
@@ -447,9 +481,9 @@ def format_markdown_report(report: Dict) -> str:
 """
 
     for match in report["matches"][:50]:  # 最多显示50条
-        content = match["content"][:30].replace("|", "\\|")
-        suggestion = match["suggestion"][:40].replace("|", "\\|")
-        md += f"| {match['line_number']} | {match['severity']} | {match['pattern_name']} | {content}... | {suggestion}... |\n"
+        ctx = (match.get("context") or match["content"]).replace("|", "\\|").replace("\n", " ")
+        suggestion = match["suggestion"].replace("|", "\\|").replace("\n", " ")
+        md += f"| {match['line_number']} | {match['severity']} | {match['pattern_name']} | {ctx} | {suggestion} |\n"
 
     if len(report["matches"]) > 50:
         md += f"\n*还有 {len(report['matches']) - 50} 条未显示*\n"
@@ -464,9 +498,16 @@ def format_markdown_report(report: Dict) -> str:
 5. **添加作者视角**: 适当增加"本文""我们"等第一人称表述
 6. **通读润色**: 修改后通读全文，确保语言自然流畅
 
----
-*报告生成时间: 自动检测*
 """
+
+    cv_report = report.get("cv_report_markdown")
+    if cv_report:
+        md += cv_report
+
+    from datetime import datetime
+
+    generated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    md += f"---\n*报告生成时间: {generated_at}*\n"
 
     return md
 

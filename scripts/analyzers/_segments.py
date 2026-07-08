@@ -17,6 +17,11 @@ from typing import Sequence
 _SENTENCE_TERMINATORS = ("。", "！", "？")
 _TERMINATOR_RE = re.compile("[。！？]")
 
+# English sentence splitter: split on [.!?] followed by whitespace and an uppercase
+# letter, opening paren, or opening quote. Handles 'et al.', 'e.g.', 'i.e.' reasonably
+# well because those are typically lowercase after the period.
+_EN_SENTENCE_RE = re.compile(r"(?<=[.!?])\s+(?=[A-Z(\"'])")
+
 
 def is_short_text(text: str) -> bool:
     """Return True when the corpus is too small to be statistically meaningful."""
@@ -41,6 +46,19 @@ def split_sentences(paragraph: str) -> list[str]:
         return []
     parts = _TERMINATOR_RE.split(paragraph)
     return [p.strip() for p in parts if p and p.strip()]
+
+
+def split_sentences_english(paragraph: str) -> list[str]:
+    """Split an English paragraph into sentences by [.!?] + whitespace + capital."""
+    if not paragraph:
+        return []
+    sents = _EN_SENTENCE_RE.split(paragraph)
+    return [s.strip() for s in sents if s and s.strip()]
+
+
+def word_count(text: str) -> int:
+    """Count whitespace-separated tokens that contain at least one alphanumeric char."""
+    return sum(1 for token in text.split() if any(ch.isalnum() for ch in token))
 
 
 def split_sentences_global(text: str) -> list[str]:

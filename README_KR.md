@@ -4,7 +4,7 @@
   <img src="https://img.shields.io/badge/Python-3.7+-blue.svg" alt="Python 3.7+">
   <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT">
   <img src="https://img.shields.io/badge/Claude-Skill-orange.svg" alt="Claude Skill">
-  <img src="https://img.shields.io/badge/Version-1.3-brightgreen.svg" alt="Version: 1.3">
+  <img src="https://img.shields.io/badge/Version-1.5-brightgreen.svg" alt="Version: 1.5">
   <img src="https://img.shields.io/badge/Kimi-CLI-blue.svg" alt="Kimi CLI">
   <a href="README.md"><img src="https://img.shields.io/badge/中文-🇨🇳-inactive.svg" alt="中文"></a>
   <a href="README_EN.md"><img src="https://img.shields.io/badge/English-🇺🇸-inactive.svg" alt="English"></a>
@@ -26,28 +26,18 @@
 
 이 도구는 **중국 MBA 졸업 논문**을 위해 특별히 설계된 AI 글쓰기 흔적 감지 및 제거 도구입니다. MBA 논문의 학술 규범과 실무 요구사항을 기반으로 하여, 다차원 감지 방법을 통해 텍스트의 AI 생성 특징을 식별하고 구체적인 수정 제안을 제공하여 AI 생성 텍스트를 자연스럽고 인간적인 학술 글쓰기 스타일로 변환하는 데 도움을 줍니다.
 
-### ✨ 버전 1.3 새로운 기능
+### ✨ 버전 1.5 새로운 기능 (단락 수준 문장 길이 CV + 보고서 가독성 향상)
 
-- 🔬 **규칙 외부화**: 모든 AI 감지 규칙을 외부 TOML 파일로 이전하여 7개 카테고리(`structure / rhythm_quality / formatting / content / evidence / language / chapter-categories`)로 분할. 규칙이 코드와 분리되어 확장 시 코드 변경 불필요
-- 📊 **산문 구조 분석기(5개)**: 문장 길이 CV / 단락 길이 CV / 단락 헤더 푸터 반복 / 단락 간 구조 균일화 / 장 절 반복. 각 분석기는 severity + confidence + location + evidence + suggestion 5개 필드 발급
-- 🔗 **시맨틱 체인 분석기(10개)**: 삼단식 / 저자 나열 / 방법 적재 / 초록 템플릿 / 결론 에코 / 막연한 문제 / 출처 없는 정량화 / 거시 서사 / 증거 체인 완성도 / 문제-대책 장 절 간 추적 — 단락이나 장을 가로지르는 패턴
-- 📋 **구조화된 재작성 플랜**: 리포트에 `modify_plan` 키 추가 — 각 문제에 위치, 재작성 골격, 추천 치환, 목표 글자수 범위 제공. severity high → medium → low 순으로 정렬되어 LLM 또는 인적 편집에 직접 사용 가능
-- 🎯 **통합 규칙 소스**: `AIPatternDetector` / `StatisticalDetector` / `FeedbackGenerator`가 동일한 TOML 규칙 문서를 공유
+- 📐 **단락 수준 문장 길이 CV**: `AI_artifact_detection` 방법을 참고하여 단락 내 문장 길이 변동 계수(CV)를 핵심 AI 신호로 사용. 중국어는 CJK 문자 수, 영어는 단어 수로 계산
+- 📊 **중국어 CV 보고서**: Markdown 감지 보고서 끝에 5개 섹션으로 구성된 CV 보고서를 자동 추가 — 전체 통계 / CV 분포 / Uniform 단락 상세 / 장 절 요약 / 문장 길이 분포
+- 🔁 **수정 전후 비교**: 새로운 `scripts/detect_compare.py` CLI를 추가. 수정 전후 텍스트를 입력하면 중국어 Before/After 비교 Markdown을 출력
+- 🌐 **선택적 영어 감지 모드**: `sentence_length.analyze(text, language="en")`로 영어 산문의 문장 길이 CV 감지 지원
+- 🎯 **전후 맥락이 포함된 내용 조각**: 상세 문제 목록의 내용 조각에 해당 위치 전후 약 20자를 표시하여 빠른 위치 파악 가능
+- 📝 **수정 제안 전문 표시**: 수정 제안을 생략하지 않고 모든 안내를 전문으로 표시
+- 📋 **Uniform 단락 전체 테이블**: CV < 0.30 인 단락을 모두 테이블로 나열. 20개 제한 폐지
+- ⏰ **실제 생성 타임스탬프**: 보고서 하단에 실제 생성 시각(YYYY-MM-DD HH:MM:SS) 표시
 
-### ✨ 버전 1.4 새로운 기능 (`high_risk_annotations`)
-
-- 🧭 **문장 단위 고위험 통합**: 리포트에 `high_risk_annotations[]` 키 추가. 한 문장당 한 항목으로 정규식 히트(행 번호 포함)와 구조/체인 이슈(location 포함)를 같은 문장에 통합
-- 🔁 **구문 치환 사전(TOML `phrase_replacements`)**: 4개 고빈도 규칙에 구문 단위 치환 매핑 제공 — `ai_buzzwords`(赋能→促进/支持 등 11개), `empty_solution_verbs`(加强…管理→…SOP 등 6개), `vague_attribution`(有研究表明→구체적 저자 등 6개), `unsupported_quantification`(提升X%→N=, 시간, 출처 포함 등 6개)
-- 📐 **실제 재작성 쌍 노출**: `[[categories.examples]]` 가 `modify_plan` 및 `high_risk_annotations.triggered_rules[]` 의 `before_after_example` 로 노출됨
-- 🆕 **`scripts/analyzers/high_risk_annotator.py`**: 350줄 신규 모듈. 문장 세분화(문자 오프셋 포함) + 이중 트랙 버킷팅(정규식은 행 번호 / 이슈는 location + evidence 부분 문자열) + 심각도 정렬 담당
-
-### ✨ 버전 1.2 새로운 기능
-
-- 📚 **삼차원 최적화 전략 문서화**: AI 감지율 감소 / 표절율 감소 / 학술 윤문 향상을 위한 3개 전략 문서 신규 추가
-- 🔍 **향상된 감지 능력**: 규칙 매칭, 통계 분석, 언어 특징 3계층 전면 최적화
-- 🎓 **MBA 규범 세분화**: MBA 논문 핵심 원칙 및 분 장별 글쓰기 가이드 추가 정교화
-- 📝 **형식 규범 개선**: 형식 표준 문서의 경계 시나리오 커버리지 확장
-- 🌐 **다국어 README**: 영어 / 일본어 버전 추가
+> 이전 버전(1.4 / 1.3 / 1.2)의 기능은 [`FEATURE.md`](FEATURE.md)에 아카이브되어 있습니다.
 
 ### 핵심 기능
 

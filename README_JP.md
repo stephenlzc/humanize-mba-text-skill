@@ -4,7 +4,7 @@
   <img src="https://img.shields.io/badge/Python-3.7+-blue.svg" alt="Python 3.7+">
   <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT">
   <img src="https://img.shields.io/badge/Claude-Skill-orange.svg" alt="Claude Skill">
-  <img src="https://img.shields.io/badge/Version-1.3-brightgreen.svg" alt="Version: 1.3">
+  <img src="https://img.shields.io/badge/Version-1.5-brightgreen.svg" alt="Version: 1.5">
   <img src="https://img.shields.io/badge/Kimi-CLI-blue.svg" alt="Kimi CLI">
   <a href="README.md"><img src="https://img.shields.io/badge/中文-🇨🇳-inactive.svg" alt="中文"></a>
   <a href="README_EN.md"><img src="https://img.shields.io/badge/English-🇺🇸-inactive.svg" alt="English"></a>
@@ -26,31 +26,18 @@
 
 本ツールは**中国のMBA卒業論文**専用に設計されたAI執筆痕跡検出・除去ツールです。MBA論文の学術規範と実践的な要求に基づき、多次元的な検出手法を用いてテキスト内のAI生成特徴を識別し、具体的な修正提案を提供することで、AI生成テキストを自然で人間らしい学術的執筆スタイルに書き換えることを支援します。
 
-### ✨ バージョン1.3の新機能
+### ✨ バージョン1.5の新機能（段落単位文長CV + レポート可読性向上）
 
-- 🔬 **ルール外部化**：すべてのAI検出ルールを外部TOMLファイルに移管し、7カテゴリ（`structure / rhythm_quality / formatting / content / evidence / language / chapter-categories`）に分割。ルールはコードから独立し、拡張時にコード変更不要
-- 📊 **散文構造分析器（5つ）**：文長CV / 段落長CV / 段落頭末テンプレート反復 / 段落間構造均一化 / 章節テンプレート反復。各分析器がseverity + confidence + location + evidence + suggestionを発行
-- 🔗 **意味連鎖分析器（10）**：三段式 / 作者列挙 / 方法積み上げ / 要約テンプレート / 結論エコー / 曖昧問題 / 無出所数量化 / 巨大物語 / 証拠連鎖 / 問題-対策追跡 — 段落や章を横断するパターン
-- 📋 **構造化書き換えプラン**：レポートに `modify_plan` キーを追加し、位置・書き換え骨格・推奨置換・目標文字数範囲を提示。severity high → medium → low でソートされ、LLMまたは人手編集に直接入力可能
-- 🎯 **統一ルールソース**：`AIPatternDetector` / `StatisticalDetector` / `FeedbackGenerator` が同じTOMLルール文書を共有
+- 📐 **段落単位文長CV分析**：`AI_artifact_detection` の手法を参考に、段落内の文長変動係数（CV）を核心となるAIシグナルとして採用。中国語はCJK文字数、英語は単語数で計測
+- 📊 **中国語CVレポート**：Markdown検出レポートの末尾に5セクション構成のCVレポートを自動追加 — 全体統計 / CV分布 / Uniform段落詳細 / 章節サマリー / 文長分布
+- 🔁 **書き換え前後の比較**：新規 `scripts/detect_compare.py` CLIを追加。書き換え前後のテキストを入力し、中国語のBefore/After比較Markdownを出力
+- 🌐 **英語検出モード（オプション）**：`sentence_length.analyze(text, language="en")` で英語散文の文長CV検出をサポート
+- 🎯 **前後文脈付き内容抜粋**：詳細問題リストの内容抜粋に、該当箇所の前後約20文字を表示し、素早く位置を特定可能
+- 📝 **修正提案を全文表示**：修正提案を省略せず、すべてのガイダンスを全文で表示
+- 📋 **Uniform段落を完全テーブル表示**：CV < 0.30 の段落をすべてテーブルで列挙。20件までの制限を撤廃
+- ⏰ **実生成タイムスタンプ**：レポートフッターに実際の生成時刻（YYYY-MM-DD HH:MM:SS）を表示
 
-### ✨ バージョン1.4の新機能（`high_risk_annotations`）
-
-- 🧭 **文単位の高リスク集約**：レポートに `high_risk_annotations[]` キーを追加。一文ごとに一エントリで、正規表現ヒット（行番号付き）と構造/連鎖issue（location付き）を同じ文に集約
-- 🔁 **フレーズ置換辞書（TOML `phrase_replacements`）**：4つの高頻度ルールに語句レベルの置換マッピングを付与 — `ai_buzzwords`（赋能→促进/支持 等 11件）、`empty_solution_verbs`（加强…管理→…SOP 等 6件）、`vague_attribution`（有研究表明→具名作者 等 6件）、`unsupported_quantification`（提升X%→N=・時間・根拠付き 等 6件）
-- 📐 **実リライト例の公開**：`[[categories.examples]]` が `modify_plan` および `high_risk_annotations.triggered_rules[]` の `before_after_example` として公開される
-- 🆕 **`scripts/analyzers/high_risk_annotator.py`**：350行の新規モジュール。文セグメンテーション（文字オフセット付き）+ 二系統バケッティング（正規表現は行番号 / issue は location + evidence 部分文字列）+ 重大度ソートを担当
-
-### ✨ バージョン1.2の新機能
-
-- 📚 **戦略文書の追加**：3つの最適化戦略ファイルを新規追加
-  - 次元1：AI検出率の低減戦略
-  - 次元2：重複率の低減戦略
-  - 次元3：学術的推敲の向上戦略
-- 🎓 **MBA規範の詳細化**：MBA論文の核心原則と章別執筆ガイドを拡充
-- 📝 **形式規範の改善**：中国語・英語混在、図表、引用などをカバーする形式標準文書を独立整理
-- 🎯 **実践重視の強化**：データ支援、理論適用、具体的な事例分析をさらに重視
-- 🌐 **多言語README**：日本語版を含む4言語版を整備
+> 旧バージョン（1.4 / 1.3 / 1.2）の機能は [`FEATURE.md`](FEATURE.md) にアーカイブされています。
 
 ### 核心機能
 

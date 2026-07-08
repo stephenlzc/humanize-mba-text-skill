@@ -76,3 +76,6 @@ tests/
 
 # Specific large reference docs not needed by the public skill.
 references/chinese-paper-rewrite-guide.md
+
+# English AI-artifact detection reference implementation (local reference only).
+AI_artifact_detection/
